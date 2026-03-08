@@ -30,6 +30,8 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
   const [showCapacityPanel, setShowCapacityPanel] = useState(false);
   const [removingUserId, setRemovingUserId] = useState<string | null>(null);
   const [showShareDialog, setShowShareDialog] = useState(false);
+  const [confirmAttendanceUserId, setConfirmAttendanceUserId] = useState<string | null>(null);
+  const [paymentFailed, setPaymentFailed] = useState(false);
   const [editForm, setEditForm] = useState({
     title: activity.title,
     date: activity.date.split("T")[0],
@@ -140,19 +142,28 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
 
   const handlePayment = () => {
     setPaymentProcessing(true);
+    setPaymentFailed(false);
     setTimeout(async () => {
-      await supabase
-        .from("invitees")
-        .update({ paid: true })
-        .eq("activity_id", activity.id)
-        .eq("user_id", currentUser.id);
+      // Simulate occasional failure (in production, this would be real PhonePe response)
+      const success = Math.random() > 0.15; // 85% success rate simulation
+      if (success) {
+        await supabase
+          .from("invitees")
+          .update({ paid: true })
+          .eq("activity_id", activity.id)
+          .eq("user_id", currentUser.id);
 
-      onUpdateActivity({
-        ...activity,
-        invitees: activity.invitees.map(i => i.userId === currentUser.id ? { ...i, paid: true } : i),
-      });
-      setPaymentProcessing(false);
-      setShowPayment(false);
+        onUpdateActivity({
+          ...activity,
+          invitees: activity.invitees.map(i => i.userId === currentUser.id ? { ...i, paid: true } : i),
+        });
+        setPaymentProcessing(false);
+        setShowPayment(false);
+      } else {
+        setPaymentProcessing(false);
+        setPaymentFailed(true);
+        toast.error("Payment failed. Please try again.");
+      }
     }, 2000);
   };
 
@@ -170,6 +181,7 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
       ...activity,
       invitees: activity.invitees.map(i => i.userId === userId ? { ...i, attended: !i.attended } : i),
     });
+    setConfirmAttendanceUserId(null);
   };
 
   const handleSaveEdit = () => {
@@ -216,7 +228,7 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
   }
 
   if (showPayment) {
-    return <PaymentScreen deposit={activity.deposit} activityTitle={activity.title} processing={paymentProcessing} onPay={handlePayment} onBack={() => setShowPayment(false)} />;
+    return <PaymentScreen deposit={activity.deposit} activityTitle={activity.title} processing={paymentProcessing} failed={paymentFailed} onPay={handlePayment} onBack={() => { setShowPayment(false); setPaymentFailed(false); }} />;
   }
 
   const dateObj = new Date(activity.date);
@@ -499,14 +511,37 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
                       </button>
                     )}
                     {isCreator && invitee.status === "accepted" && invitee.paid && (
-                      <button onClick={() => handleMarkAttendance(invitee.userId)}
-                        className={`px-3 py-2 rounded-xl text-[13px] font-medium transition-all ${
-                          invitee.attended
-                            ? "bg-transparent text-foreground border border-border"
-                            : "bg-[hsl(var(--squad-green))] text-primary-foreground shadow-green"
-                        }`}>
-                        {invitee.attended ? "Undo" : "Mark ✓"}
-                      </button>
+                      <>
+                        {confirmAttendanceUserId === invitee.userId ? (
+                          <div className="flex gap-1.5 items-center">
+                            <button
+                              onClick={() => setConfirmAttendanceUserId(null)}
+                              className="px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-secondary border border-border"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={() => handleMarkAttendance(invitee.userId)}
+                              className={`px-2.5 py-1.5 rounded-lg text-[11px] font-medium ${
+                                invitee.attended
+                                  ? "bg-destructive text-primary-foreground"
+                                  : "bg-[hsl(var(--squad-green))] text-primary-foreground"
+                              }`}
+                            >
+                              {invitee.attended ? "Yes, undo" : "Yes, mark ✓"}
+                            </button>
+                          </div>
+                        ) : (
+                          <button onClick={() => setConfirmAttendanceUserId(invitee.userId)}
+                            className={`px-3 py-2 rounded-xl text-[13px] font-medium transition-all ${
+                              invitee.attended
+                                ? "bg-transparent text-foreground border border-border"
+                                : "bg-[hsl(var(--squad-green))] text-primary-foreground shadow-green"
+                            }`}>
+                            {invitee.attended ? "Undo" : "Mark ✓"}
+                          </button>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>

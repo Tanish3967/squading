@@ -4,11 +4,12 @@ interface Props {
   deposit: number;
   activityTitle: string;
   processing: boolean;
+  failed?: boolean;
   onPay: () => void;
   onBack: () => void;
 }
 
-export default function PaymentScreen({ deposit, activityTitle, processing, onPay, onBack }: Props) {
+export default function PaymentScreen({ deposit, activityTitle, processing, failed, onPay, onBack }: Props) {
   return (
     <div className="min-h-screen flex flex-col pb-20 animate-fade-up">
       <div className="flex items-center justify-between pt-14 px-6 pb-5">
@@ -57,9 +58,16 @@ export default function PaymentScreen({ deposit, activityTitle, processing, onPa
             </div>
             <div className="ml-auto text-[11px] px-2 py-0.5 bg-[hsl(var(--squad-green)/0.1)] text-[hsl(var(--squad-green))] rounded-md border border-[hsl(var(--squad-green)/0.2)]">Secured</div>
           </div>
+          {failed && (
+            <div className="p-3.5 bg-destructive/[0.08] border border-destructive/20 rounded-[14px] mb-3.5">
+              <p className="text-[13px] text-destructive leading-relaxed">
+                ❌ Payment failed. Please try again. If the issue persists, try a different payment method.
+              </p>
+            </div>
+          )}
           <button onClick={onPay} disabled={processing}
             className="flex items-center justify-center gap-2 py-3.5 px-6 rounded-[14px] bg-[hsl(var(--squad-phonepe))] text-foreground font-medium shadow-phonepe active:scale-[0.97] transition-all w-full disabled:opacity-50">
-            {processing ? <span className="animate-pulse-soft">Processing…</span> : `Pay ₹${deposit} via PhonePe`}
+            {processing ? <span className="animate-pulse-soft">Processing…</span> : failed ? `Retry Payment · ₹${deposit}` : `Pay ₹${deposit} via PhonePe`}
           </button>
         </div>
         <p className="text-center text-[11px] text-[hsl(var(--squad-text3))]">Powered by PhonePe Payment Gateway · PCI-DSS Compliant</p>
