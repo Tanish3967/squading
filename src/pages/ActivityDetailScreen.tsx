@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ChevronLeft, Calendar, Clock, MapPin, Users, X, Check, Pencil, Trash2, Ban, Share2, CheckCheck, BellRing, UserPlus } from "lucide-react";
+import { ChevronLeft, Calendar, Clock, MapPin, Users, X, Check, Pencil, Trash2, Ban, Share2, CheckCheck, BellRing, UserPlus, ChevronDown, UserMinus } from "lucide-react";
 import { toast } from "sonner";
 import { Activity, User, ACTIVITY_CATEGORIES } from "@/lib/mock-data";
 import SquadAvatar from "@/components/squad/Avatar";
