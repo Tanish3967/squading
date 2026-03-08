@@ -349,7 +349,10 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
               <p className="text-[15px] font-semibold">{activity.location}</p>
             </div>
           </div>
-          <div className="flex items-center gap-4 p-4">
+          <div
+            className="flex items-center gap-4 p-4 cursor-pointer active:bg-secondary/50 transition-colors"
+            onClick={() => setShowCapacityPanel(!showCapacityPanel)}
+          >
             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
               <Users size={18} />
             </div>
@@ -357,10 +360,62 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
               <p className="text-[13px] text-muted-foreground">Capacity</p>
               <p className="text-[15px] font-semibold">{joinedInvitees.length} / {activity.maxPeople} joined</p>
             </div>
-            <div className="w-16 h-2 bg-secondary rounded-full overflow-hidden">
-              <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${capacityPercent}%` }} />
+            <div className="flex items-center gap-2">
+              <div className="w-16 h-2 bg-secondary rounded-full overflow-hidden">
+                <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${capacityPercent}%` }} />
+              </div>
+              <ChevronDown size={14} className={`text-muted-foreground transition-transform ${showCapacityPanel ? "rotate-180" : ""}`} />
             </div>
           </div>
+
+          {/* Expandable member list */}
+          {showCapacityPanel && (
+            <div className="border-t border-border px-4 py-3 space-y-2">
+              {activity.invitees.length === 0 && (
+                <p className="text-[13px] text-muted-foreground text-center py-2">No members yet</p>
+              )}
+              {activity.invitees.map(invitee => {
+                const userName = getInviteeName(invitee.userId);
+                return (
+                  <div key={invitee.userId} className="flex items-center gap-3 py-1.5">
+                    <SquadAvatar name={userName} size="sm" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-medium truncate">{userName}</p>
+                      <StatusPill status={invitee.status} />
+                    </div>
+                    {/* Remove button for creator (can't remove self) */}
+                    {isCreator && invitee.userId !== currentUser.id && activity.status === "upcoming" && (
+                      <>
+                        {removingUserId === invitee.userId ? (
+                          <div className="flex gap-1.5">
+                            <button
+                              onClick={() => setRemovingUserId(null)}
+                              className="px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-secondary border border-border"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={() => handleRemoveInvitee(invitee.userId)}
+                              className="px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-destructive text-primary-foreground"
+                            >
+                              Remove
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setRemovingUserId(invitee.userId)}
+                            className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                          >
+                            <UserMinus size={14} />
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Deposit card */}
