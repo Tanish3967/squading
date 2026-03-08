@@ -69,6 +69,7 @@ function AppContent() {
   const [loadingActivities, setLoadingActivities] = useState(true);
   const [shareActivity, setShareActivity] = useState<{ activity: AppActivity; inviteeNames: string[] } | null>(null);
   const [pendingJoinActivityId, setPendingJoinActivityId] = useState<string | null>(null);
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
 
   // Check for joinActivity query param
   useEffect(() => {
@@ -134,11 +135,23 @@ function AppContent() {
     setLoadingActivities(false);
   };
 
+  // Fetch unread notification count
+  const fetchUnreadCount = async () => {
+    if (!profile) return;
+    const { count } = await supabase
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", profile.id)
+      .eq("is_read", false);
+    setUnreadNotifCount(count || 0);
+  };
+
   useEffect(() => {
     if (!profile) return;
     fetchActivities();
+    fetchUnreadCount();
 
-    // Subscribe to realtime changes on activities and invitees
+    // Subscribe to realtime changes on activities, invitees, and notifications
     const channel = supabase
       .channel("realtime-activities")
       .on(
@@ -150,6 +163,11 @@ function AppContent() {
         "postgres_changes",
         { event: "*", schema: "public", table: "invitees" },
         () => fetchActivities()
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${profile.id}` },
+        () => fetchUnreadCount()
       )
       .subscribe();
 
@@ -250,8 +268,37 @@ function AppContent() {
       return;
     }
 
-    // Insert invitees (skip FK-violating contact IDs for now — contacts aren't profiles)
-    // We store invitee records only when the contact has a matching profile
+    // Look up contacts by phone to find matching registered profiles, then insert invitees
+    const contactInvitees: { name: string; phone?: string }[] = newActivity.invitees || [];
+    const phones = contactInvitees.map((c: any) => c.phone).filter(Boolean);
+    let insertedInvitees: AppInvitee[] = [];
+
+    if (phones.length > 0) {
+      const { data: matchedProfiles } = await supabase
+        .from("profiles")
+        .select("id, phone")
+        .in("phone", phones);
+
+      if (matchedProfiles && matchedProfiles.length > 0) {
+        const inviteeRows = matchedProfiles
+          .filter((p) => p.id !== currentUser.id) // Don't invite yourself
+          .map((p) => ({
+            activity_id: created.id,
+            user_id: p.id,
+            status: "pending",
+          }));
+
+        if (inviteeRows.length > 0) {
+          await supabase.from("invitees").insert(inviteeRows);
+          insertedInvitees = inviteeRows.map((r) => ({
+            userId: r.user_id,
+            status: "pending" as const,
+            paid: false,
+            attended: false,
+          }));
+        }
+      }
+    }
 
     // Add to local state
     const appActivity: AppActivity = {
@@ -265,7 +312,7 @@ function AppContent() {
       maxPeople: created.max_people,
       description: created.description || "",
       creatorId: created.creator_id,
-      invitees: [],
+      invitees: insertedInvitees,
       status: "upcoming",
     };
     setActivities((prev) => [appActivity, ...prev]);
@@ -273,18 +320,20 @@ function AppContent() {
     setActiveTab("home");
 
     // Show share dialog with invitee names
-    const inviteeNames: string[] = (newActivity.invitees || []).map((inv: any) => inv.name || "Contact");
+    const inviteeNames: string[] = contactInvitees.map((inv: any) => inv.name || "Contact");
     setShareActivity({ activity: appActivity, inviteeNames });
   };
 
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     setScreen(tab);
+    if (tab === "notifications") {
+      // Reset badge count when viewing notifications
+      setUnreadNotifCount(0);
+    }
   };
 
-  const pendingCount = activities.filter((a) =>
-    a.invitees.some((i) => i.userId === currentUser.id && i.status === "pending")
-  ).length;
+  const pendingCount = unreadNotifCount;
 
   const renderScreen = () => {
     if (screen === "contacts") {
