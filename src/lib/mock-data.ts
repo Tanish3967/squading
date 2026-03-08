@@ -1,19 +1,19 @@
 export interface User {
-  id: number;
+  id: string;
   name: string;
   phone: string;
   avatar: string;
 }
 
 export interface Invitee {
-  userId: number;
+  userId: string;
   status: "accepted" | "declined" | "pending";
   paid: boolean;
   attended: boolean;
 }
 
 export interface Activity {
-  id: number;
+  id: string;
   title: string;
   category: string;
   date: string;
@@ -22,18 +22,18 @@ export interface Activity {
   deposit: number;
   maxPeople: number;
   description: string;
-  creatorId: number;
+  creatorId: string;
   invitees: Invitee[];
   status: "upcoming" | "completed" | "cancelled";
 }
 
 export const MOCK_USERS: User[] = [
-  { id: 1, name: "Arjun Mehta", phone: "9876543210", avatar: "AM" },
-  { id: 2, name: "Priya Sharma", phone: "9123456789", avatar: "PS" },
-  { id: 3, name: "Rohit Das", phone: "9988776655", avatar: "RD" },
-  { id: 4, name: "Sneha Iyer", phone: "9001122334", avatar: "SI" },
-  { id: 5, name: "Vikram Nair", phone: "9765432100", avatar: "VN" },
-  { id: 6, name: "Kavya Reddy", phone: "9654321098", avatar: "KR" },
+  { id: "1", name: "Arjun Mehta", phone: "9876543210", avatar: "AM" },
+  { id: "2", name: "Priya Sharma", phone: "9123456789", avatar: "PS" },
+  { id: "3", name: "Rohit Das", phone: "9988776655", avatar: "RD" },
+  { id: "4", name: "Sneha Iyer", phone: "9001122334", avatar: "SI" },
+  { id: "5", name: "Vikram Nair", phone: "9765432100", avatar: "VN" },
+  { id: "6", name: "Kavya Reddy", phone: "9654321098", avatar: "KR" },
 ];
 
 export const ACTIVITY_CATEGORIES = [
@@ -47,7 +47,7 @@ export const ACTIVITY_CATEGORIES = [
 
 export const SAMPLE_ACTIVITIES: Activity[] = [
   {
-    id: 101,
+    id: "101",
     title: "Sinhagad Fort Trek",
     category: "trek",
     date: "2026-03-22",
@@ -56,17 +56,17 @@ export const SAMPLE_ACTIVITIES: Activity[] = [
     deposit: 199,
     maxPeople: 12,
     description: "Early morning trek to Sinhagad. Meeting at Swargate at 5:30am. Breakfast at the top!",
-    creatorId: 2,
+    creatorId: "2",
     invitees: [
-      { userId: 1, status: "accepted", paid: true, attended: false },
-      { userId: 3, status: "accepted", paid: true, attended: false },
-      { userId: 4, status: "pending", paid: false, attended: false },
-      { userId: 5, status: "declined", paid: false, attended: false },
+      { userId: "1", status: "accepted", paid: true, attended: false },
+      { userId: "3", status: "accepted", paid: true, attended: false },
+      { userId: "4", status: "pending", paid: false, attended: false },
+      { userId: "5", status: "declined", paid: false, attended: false },
     ],
     status: "upcoming",
   },
   {
-    id: 102,
+    id: "102",
     title: "Sunday Cricket at Oval Maidan",
     category: "sports",
     date: "2026-03-15",
@@ -75,11 +75,11 @@ export const SAMPLE_ACTIVITIES: Activity[] = [
     deposit: 99,
     maxPeople: 22,
     description: "Friendly 20-over match. Bring your own bat if you have one. Teams will be decided on spot.",
-    creatorId: 1,
+    creatorId: "1",
     invitees: [
-      { userId: 2, status: "accepted", paid: true, attended: true },
-      { userId: 3, status: "accepted", paid: true, attended: true },
-      { userId: 6, status: "accepted", paid: true, attended: false },
+      { userId: "2", status: "accepted", paid: true, attended: true },
+      { userId: "3", status: "accepted", paid: true, attended: true },
+      { userId: "6", status: "accepted", paid: true, attended: false },
     ],
     status: "completed",
   },

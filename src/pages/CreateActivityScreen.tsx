@@ -15,15 +15,15 @@ export default function CreateActivityScreen({ currentUser, onBack, onCreate }: 
     title: "", category: "", date: "", time: "", location: "", deposit: 99,
     description: "", maxPeople: 10,
   });
-  const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
 
   const otherUsers = MOCK_USERS.filter(u => u.id !== currentUser.id);
-  const toggleUser = (id: number) => setSelectedUsers(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  const toggleUser = (id: string) => setSelectedUsers(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   const set = (key: string, val: string | number) => setForm(f => ({ ...f, [key]: val }));
 
   const handleCreate = () => {
     const newActivity: Activity = {
-      id: Date.now(),
+      id: crypto.randomUUID(),
       ...form,
       creatorId: currentUser.id,
       invitees: selectedUsers.map(uid => ({ userId: uid, status: "pending" as const, paid: false, attended: false })),
