@@ -135,6 +135,25 @@ function AppContent() {
   useEffect(() => {
     if (!profile) return;
     fetchActivities();
+
+    // Subscribe to realtime changes on activities and invitees
+    const channel = supabase
+      .channel("realtime-activities")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "activities" },
+        () => fetchActivities()
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "invitees" },
+        () => fetchActivities()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [profile]);
 
   if (loading) {
