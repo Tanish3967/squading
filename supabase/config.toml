@@ -2,3 +2,6 @@ project_id = "xhzdwbafpdfduuypfkmt"
 
 [functions.auth]
 verify_jwt = false
+
+[functions.get-public-activity]
+verify_jwt = false
