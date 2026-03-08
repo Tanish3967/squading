@@ -67,7 +67,7 @@ export default function HomeScreen({ currentUser, activities, onActivityClick, o
           </p>
           <div className="flex flex-col gap-2.5">
             {myInvites.map(a => (
-              <ActivityCard key={a.id} activity={a} currentUserId={currentUser.id} onClick={onActivityClick} />
+              <ActivityCard key={a.id} activity={a} currentUserId={currentUser.id as string} onClick={onActivityClick} />
             ))}
           </div>
         </div>
