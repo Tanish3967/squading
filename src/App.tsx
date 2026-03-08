@@ -171,8 +171,39 @@ function AppContent() {
   };
 
   const handleUpdateActivity = async (updated: AppActivity) => {
+    // Update in database
+    await supabase
+      .from("activities")
+      .update({
+        title: updated.title,
+        category: updated.category,
+        date: updated.date,
+        time: updated.time,
+        location: updated.location,
+        deposit: updated.deposit,
+        max_people: updated.maxPeople,
+        description: updated.description || null,
+        status: updated.status,
+      })
+      .eq("id", updated.id);
+
     setActivities((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
     setSelectedActivity(updated);
+  };
+
+  const handleDeleteActivity = async (id: string) => {
+    // Delete invitees first (FK), then activity
+    await supabase.from("invitees").delete().eq("activity_id", id);
+    const { error } = await supabase.from("activities").delete().eq("id", id);
+    if (error) {
+      const { toast } = await import("sonner");
+      toast.error(error.message);
+      return;
+    }
+    setActivities((prev) => prev.filter((a) => a.id !== id));
+    setSelectedActivity(null);
+    setScreen("home");
+    setActiveTab("home");
   };
 
   const handleCreateActivity = async (newActivity: any) => {
