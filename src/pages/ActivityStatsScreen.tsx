@@ -61,8 +61,17 @@ export default function ActivityStatsScreen({ currentUserId, activities, onRefre
   }
   const maxMonth = Math.max(...months.map(m => m.count), 1);
 
+  const { containerRef, pullDistance, refreshing, handlers } = usePullToRefresh({
+    onRefresh: onRefresh || (async () => {}),
+  });
+
   return (
-    <div className="min-h-screen flex flex-col pb-20 animate-fade-up">
+    <div
+      ref={containerRef}
+      {...handlers}
+      className="min-h-screen flex flex-col pb-20 animate-fade-up overflow-y-auto"
+    >
+      <PullIndicator pullDistance={pullDistance} refreshing={refreshing} />
       {/* Header */}
       <div className="pt-[52px] px-6 pb-6 relative">
         <GlowOrb color="hsl(var(--squad-green))" size={220} top="-50px" right="-60px" />
