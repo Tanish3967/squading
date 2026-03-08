@@ -69,6 +69,7 @@ function AppContent() {
   const [loadingActivities, setLoadingActivities] = useState(true);
   const [shareActivity, setShareActivity] = useState<{ activity: AppActivity; inviteeNames: string[] } | null>(null);
   const [pendingJoinActivityId, setPendingJoinActivityId] = useState<string | null>(null);
+  const [unreadNotifCount, setUnreadNotifCount] = useState(0);
 
   // Check for joinActivity query param
   useEffect(() => {
