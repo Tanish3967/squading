@@ -6,6 +6,7 @@ import CreateActivityScreen from "./pages/CreateActivityScreen";
 import ActivityDetailScreen from "./pages/ActivityDetailScreen";
 import NotificationsScreen from "./pages/NotificationsScreen";
 import ProfileScreen from "./pages/ProfileScreen";
+import ContactsScreen from "./pages/ContactsScreen";
 import BottomNav from "./components/squad/BottomNav";
 import { AuthProvider, useAuth, Profile } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
