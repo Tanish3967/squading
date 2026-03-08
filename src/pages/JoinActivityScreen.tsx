@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Calendar, MapPin, Users, ArrowRight } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { ACTIVITY_CATEGORIES } from "@/lib/mock-data";
 import SquadAvatar from "@/components/squad/Avatar";
 import GlowOrb from "@/components/squad/GlowOrb";
