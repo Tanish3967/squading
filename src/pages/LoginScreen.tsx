@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { Phone, User } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import GlowOrb from "@/components/squad/GlowOrb";
+import squadLogo from "@/assets/squad-logo.png";
 import { checkPhone, registerPhone, resetupTOTP, verifySetup, loginWithTOTP } from "@/lib/auth-api";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
