@@ -13,6 +13,10 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        display: ["Syne", "sans-serif"],
+        body: ["DM Sans", "sans-serif"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -47,6 +51,18 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        squad: {
+          bg: "hsl(var(--squad-bg))",
+          bg2: "hsl(var(--squad-bg2))",
+          bg3: "hsl(var(--squad-bg3))",
+          saffron: "hsl(var(--squad-saffron))",
+          green: "hsl(var(--squad-green))",
+          red: "hsl(var(--squad-red))",
+          phonepe: "hsl(var(--squad-phonepe))",
+          text: "hsl(var(--squad-text))",
+          text2: "hsl(var(--squad-text2))",
+          text3: "hsl(var(--squad-text3))",
+        },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
@@ -62,23 +78,21 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        xl: "1.25rem",
+      },
+      boxShadow: {
+        saffron: "0 4px 20px hsl(25 100% 50% / 0.25)",
+        green: "0 4px 20px hsl(156 100% 45% / 0.2)",
+        phonepe: "0 4px 20px hsl(267 47% 42% / 0.35)",
       },
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
         },
       },
       animation: {
