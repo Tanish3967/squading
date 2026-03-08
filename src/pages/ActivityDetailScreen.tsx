@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { ChevronLeft, Calendar, Clock, MapPin, Users, X, Check, Pencil, Trash2, Ban, Share2 } from "lucide-react";
+import { ChevronLeft, Calendar, Clock, MapPin, Users, X, Check, Pencil, Trash2, Ban, Share2, CheckCheck } from "lucide-react";
+import { toast } from "sonner";
 import { Activity, User, MOCK_USERS, ACTIVITY_CATEGORIES } from "@/lib/mock-data";
 import SquadAvatar from "@/components/squad/Avatar";
 import StatusPill from "@/components/squad/StatusPill";
@@ -123,6 +124,17 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
             <ChevronLeft size={20} />
           </button>
           <div className="flex gap-2">
+            <button
+              onClick={() => {
+                const joinUrl = `${window.location.origin}/join/${activity.id}`;
+                navigator.clipboard.writeText(joinUrl).then(() => {
+                  toast.success("Invite link copied to clipboard!");
+                });
+              }}
+              className="w-11 h-11 rounded-2xl bg-background/60 backdrop-blur-xl border border-border flex items-center justify-center text-foreground active:scale-95 transition-transform"
+            >
+              <Share2 size={16} />
+            </button>
             {isCreator && activity.status === "upcoming" && (
               <>
                 <button onClick={() => setShowEdit(true)} className="w-11 h-11 rounded-2xl bg-background/60 backdrop-blur-xl border border-border flex items-center justify-center text-foreground active:scale-95 transition-transform">
