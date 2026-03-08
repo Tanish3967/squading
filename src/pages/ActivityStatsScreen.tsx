@@ -1,5 +1,7 @@
 import { TrendingUp, Target, Wallet, Trophy, Calendar, CheckCircle2, XCircle, Clock } from "lucide-react";
 import GlowOrb from "@/components/squad/GlowOrb";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import PullIndicator from "@/components/squad/PullIndicator";
 
 interface ActivityData {
   id: string;
@@ -20,9 +22,10 @@ interface ActivityData {
 interface Props {
   currentUserId: string;
   activities: ActivityData[];
+  onRefresh?: () => Promise<void>;
 }
 
-export default function ActivityStatsScreen({ currentUserId, activities }: Props) {
+export default function ActivityStatsScreen({ currentUserId, activities, onRefresh }: Props) {
   // Compute stats
   const created = activities.filter(a => a.creatorId === currentUserId);
   const invitedTo = activities.filter(a => a.invitees.some(i => i.userId === currentUserId));
