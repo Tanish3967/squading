@@ -207,7 +207,7 @@ export default function JoinActivityScreen() {
               </div>
             ) : (
               <button
-                onClick={() => navigate("/")}
+                onClick={() => navigate(`/?joinActivity=${activity.id}`)}
                 className="flex items-center justify-center gap-2.5 py-4 px-6 rounded-[14px] bg-squad-saffron text-primary-foreground font-semibold text-base shadow-saffron active:scale-[0.97] transition-all w-full"
               >
                 Join & Pay ₹{activity.deposit}

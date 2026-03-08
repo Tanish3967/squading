@@ -65,6 +65,20 @@ function AppContent() {
   const [selectedActivity, setSelectedActivity] = useState<AppActivity | null>(null);
   const [loadingActivities, setLoadingActivities] = useState(true);
   const [shareActivity, setShareActivity] = useState<{ activity: AppActivity; inviteeNames: string[] } | null>(null);
+  const [pendingJoinActivityId, setPendingJoinActivityId] = useState<string | null>(null);
+
+  // Check for joinActivity query param
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const joinId = params.get("joinActivity");
+    if (joinId) {
+      setPendingJoinActivityId(joinId);
+      // Clean up URL
+      const url = new URL(window.location.href);
+      url.searchParams.delete("joinActivity");
+      window.history.replaceState({}, "", url.pathname + url.search);
+    }
+  }, []);
 
   const currentUser = profile ? profileToAppUser(profile) : null;
 
@@ -108,6 +122,16 @@ function AppContent() {
           status: a.status as "upcoming" | "completed" | "cancelled",
         }));
         setActivities(mapped);
+
+        // Auto-open activity from join link
+        if (pendingJoinActivityId) {
+          const match = mapped.find((a) => a.id === pendingJoinActivityId);
+          if (match) {
+            setSelectedActivity(match);
+            setScreen("detail");
+          }
+          setPendingJoinActivityId(null);
+        }
       }
       setLoadingActivities(false);
     }
