@@ -11,7 +11,7 @@ interface Props {
   onEditProfileClick: () => void;
 }
 
-export default function ProfileScreen({ currentUser, activities, onLogout, onContactsClick }: Props) {
+export default function ProfileScreen({ currentUser, activities, onLogout, onContactsClick, onEditProfileClick }: Props) {
   const myCreated = activities.filter(a => a.creatorId === currentUser.id);
   const myAttended = activities.filter(a => a.invitees.some(i => i.userId === currentUser.id && i.attended));
   const totalPaid = activities.reduce((sum, a) => {
