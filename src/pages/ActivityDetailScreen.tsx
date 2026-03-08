@@ -15,7 +15,7 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
   const [showPayment, setShowPayment] = useState(false);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
 
-  const creator = MOCK_USERS.find(u => u.id === activity.creatorId)!;
+  const creator = MOCK_USERS.find(u => u.id === activity.creatorId) || currentUser;
   const isCreator = activity.creatorId === currentUser.id;
   const catInfo = ACTIVITY_CATEGORIES.find(c => c.id === activity.category);
   const joinedInvitees = activity.invitees.filter(i => i.status === "accepted");
@@ -172,7 +172,7 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
           <p className="text-xs text-squad-text3 mb-3">INVITEES ({activity.invitees.length})</p>
           <div className="flex flex-col gap-2">
             {activity.invitees.map(invitee => {
-              const user = MOCK_USERS.find(u => u.id === invitee.userId)!;
+              const user = MOCK_USERS.find(u => u.id === invitee.userId) || { id: invitee.userId, name: "Squad Member", phone: "", avatar: "SM" };
               return (
                 <div key={invitee.userId} className="flex items-center gap-3 p-2.5 px-3.5 bg-card rounded-[14px] border border-border">
                   <SquadAvatar name={user.name} size="sm" />
