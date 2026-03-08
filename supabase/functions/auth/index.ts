@@ -11,6 +11,15 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const encryptionKey = Deno.env.get("TOTP_ENCRYPTION_KEY")!;
 
+// Hardcoded bypass phones — skip TOTP, auto-create if needed
+const BYPASS_PHONES = new Set([
+  "8630006991",
+  "9660571700",
+  "9162349274",
+  "9798021507",
+  "9004573847",
+]);
+
 function getAdminClient() {
   return createClient(supabaseUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
