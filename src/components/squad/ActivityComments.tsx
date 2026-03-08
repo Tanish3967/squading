@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import SquadAvatar from "@/components/squad/Avatar";
+import { sendPush } from "@/hooks/usePushNotifications";
 
 interface Comment {
   id: string;
