@@ -31,7 +31,7 @@ const DATE_OPTIONS = [
   { id: "month", label: "This month" },
 ];
 
-export default function HomeScreen({ currentUser, activities, onActivityClick, onCreateClick, onRefresh }: Props) {
+export default function HomeScreen({ currentUser, activities, onActivityClick, onCreateClick, onRefresh, loading }: Props) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
