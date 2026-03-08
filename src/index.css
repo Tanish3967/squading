@@ -139,21 +139,35 @@ input[type="range"]::-webkit-slider-thumb {
 
 /* OTP input */
 .otp-input {
-  width: 52px;
-  height: 60px;
+  width: 48px;
+  height: 58px;
   background: hsl(var(--squad-bg3));
-  border: 1px solid hsl(var(--border));
+  border: 1.5px solid hsl(var(--border));
   border-radius: 14px;
   text-align: center;
-  color: hsl(var(--squad-text));
+  color: hsl(var(--squad-saffron));
   font-family: 'Syne', sans-serif;
-  font-size: 22px;
-  font-weight: 700;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
   outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
-  caret-color: hsl(var(--squad-saffron));
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.2s, transform 0.15s;
+  caret-color: transparent;
 }
 .otp-input:focus {
   border-color: hsl(var(--squad-saffron));
-  box-shadow: 0 0 0 3px hsl(var(--squad-saffron-glow) / 0.25);
+  box-shadow: 0 0 0 3px hsl(var(--squad-saffron-glow) / 0.2), 0 0 20px hsl(var(--squad-saffron-glow) / 0.1);
+  background: hsl(var(--squad-bg3) / 0.8);
+  transform: scale(1.05);
+}
+.otp-input.filled {
+  border-color: hsl(var(--squad-saffron) / 0.5);
+  background: hsl(var(--squad-saffron) / 0.08);
+}
+.otp-separator {
+  width: 12px;
+  height: 3px;
+  border-radius: 99px;
+  background: hsl(var(--squad-text3));
+  flex-shrink: 0;
 }
