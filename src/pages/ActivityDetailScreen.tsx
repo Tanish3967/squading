@@ -228,7 +228,7 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
   }
 
   if (showPayment) {
-    return <PaymentScreen deposit={activity.deposit} activityTitle={activity.title} processing={paymentProcessing} onPay={handlePayment} onBack={() => setShowPayment(false)} />;
+    return <PaymentScreen deposit={activity.deposit} activityTitle={activity.title} processing={paymentProcessing} failed={paymentFailed} onPay={handlePayment} onBack={() => { setShowPayment(false); setPaymentFailed(false); }} />;
   }
 
   const dateObj = new Date(activity.date);
