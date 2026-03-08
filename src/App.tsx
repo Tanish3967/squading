@@ -216,6 +216,9 @@ function AppContent() {
   ).length;
 
   const renderScreen = () => {
+    if (screen === "contacts") {
+      return <ContactsScreen onBack={() => { setScreen("profile"); setActiveTab("profile"); }} />;
+    }
     if (screen === "create") {
       return (
         <CreateActivityScreen
