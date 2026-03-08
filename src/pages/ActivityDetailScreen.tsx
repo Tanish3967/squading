@@ -511,14 +511,37 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
                       </button>
                     )}
                     {isCreator && invitee.status === "accepted" && invitee.paid && (
-                      <button onClick={() => handleMarkAttendance(invitee.userId)}
-                        className={`px-3 py-2 rounded-xl text-[13px] font-medium transition-all ${
-                          invitee.attended
-                            ? "bg-transparent text-foreground border border-border"
-                            : "bg-[hsl(var(--squad-green))] text-primary-foreground shadow-green"
-                        }`}>
-                        {invitee.attended ? "Undo" : "Mark ✓"}
-                      </button>
+                      <>
+                        {confirmAttendanceUserId === invitee.userId ? (
+                          <div className="flex gap-1.5 items-center">
+                            <button
+                              onClick={() => setConfirmAttendanceUserId(null)}
+                              className="px-2.5 py-1.5 rounded-lg text-[11px] font-medium bg-secondary border border-border"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={() => handleMarkAttendance(invitee.userId)}
+                              className={`px-2.5 py-1.5 rounded-lg text-[11px] font-medium ${
+                                invitee.attended
+                                  ? "bg-destructive text-primary-foreground"
+                                  : "bg-[hsl(var(--squad-green))] text-primary-foreground"
+                              }`}
+                            >
+                              {invitee.attended ? "Yes, undo" : "Yes, mark ✓"}
+                            </button>
+                          </div>
+                        ) : (
+                          <button onClick={() => setConfirmAttendanceUserId(invitee.userId)}
+                            className={`px-3 py-2 rounded-xl text-[13px] font-medium transition-all ${
+                              invitee.attended
+                                ? "bg-transparent text-foreground border border-border"
+                                : "bg-[hsl(var(--squad-green))] text-primary-foreground shadow-green"
+                            }`}>
+                            {invitee.attended ? "Undo" : "Mark ✓"}
+                          </button>
+                        )}
+                      </>
                     )}
                   </div>
                 </div>
