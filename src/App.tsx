@@ -275,9 +275,7 @@ function AppContent() {
 
     if (phones.length > 0) {
       const { data: matchedProfiles } = await supabase
-        .from("profiles")
-        .select("id, phone")
-        .in("phone", phones);
+        .rpc("get_profiles_by_phones", { phone_numbers: phones });
 
       if (matchedProfiles && matchedProfiles.length > 0) {
         const inviteeRows = matchedProfiles

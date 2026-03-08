@@ -469,6 +469,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_profiles_by_phones: {
+        Args: { phone_numbers: string[] }
+        Returns: {
+          id: string
+          phone: string
+        }[]
+      }
       get_public_profiles: {
         Args: { user_ids: string[] }
         Returns: {
