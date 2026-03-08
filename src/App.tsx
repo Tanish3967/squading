@@ -7,6 +7,7 @@ import ActivityDetailScreen from "./pages/ActivityDetailScreen";
 import NotificationsScreen from "./pages/NotificationsScreen";
 import ProfileScreen from "./pages/ProfileScreen";
 import ContactsScreen from "./pages/ContactsScreen";
+import ActivityStatsScreen from "./pages/ActivityStatsScreen";
 import BottomNav from "./components/squad/BottomNav";
 import ShareInviteDialog from "./components/squad/ShareInviteDialog";
 import { AuthProvider, useAuth, Profile } from "@/hooks/useAuth";
@@ -290,6 +291,9 @@ function AppContent() {
           onDeleteActivity={handleDeleteActivity}
         />
       );
+    }
+    if (activeTab === "activity") {
+      return <ActivityStatsScreen currentUserId={currentUser.id} activities={activities} />;
     }
     if (activeTab === "notifications") {
       return <NotificationsScreen currentUser={currentUser} activities={activities} onActivityClick={handleActivityClick} />;
