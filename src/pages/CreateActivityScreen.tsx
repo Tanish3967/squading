@@ -23,7 +23,7 @@ export default function CreateActivityScreen({ currentUser, onBack, onCreate }: 
 
   const handleCreate = () => {
     const newActivity: Activity = {
-      id: Date.now(),
+      id: crypto.randomUUID(),
       ...form,
       creatorId: currentUser.id,
       invitees: selectedUsers.map(uid => ({ userId: uid, status: "pending" as const, paid: false, attended: false })),

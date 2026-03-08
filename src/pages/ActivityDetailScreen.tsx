@@ -48,7 +48,7 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
     }, 2000);
   };
 
-  const handleMarkAttendance = (userId: number) => {
+  const handleMarkAttendance = (userId: string) => {
     onUpdateActivity({
       ...activity,
       invitees: activity.invitees.map(i => i.userId === userId ? { ...i, attended: !i.attended } : i),

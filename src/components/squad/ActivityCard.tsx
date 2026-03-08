@@ -5,7 +5,7 @@ import StatusPill from "./StatusPill";
 
 interface Props {
   activity: Activity;
-  currentUserId: number;
+  currentUserId: string;
   onClick: (activity: Activity) => void;
 }
 

@@ -84,7 +84,7 @@ export default function HomeScreen({ currentUser, activities, onActivityClick, o
             </div>
           ) : (
             myActivities.map(a => (
-              <ActivityCard key={a.id} activity={a} currentUserId={currentUser.id} onClick={onActivityClick} />
+              <ActivityCard key={a.id} activity={a} currentUserId={currentUser.id as string} onClick={onActivityClick} />
             ))
           )}
         </div>
