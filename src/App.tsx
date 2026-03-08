@@ -10,6 +10,7 @@ import ContactsScreen from "./pages/ContactsScreen";
 import ActivityStatsScreen from "./pages/ActivityStatsScreen";
 import BottomNav from "./components/squad/BottomNav";
 import ShareInviteDialog from "./components/squad/ShareInviteDialog";
+import InstallPrompt from "./components/squad/InstallPrompt";
 import { AuthProvider, useAuth, Profile } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -343,6 +344,7 @@ function AppContent() {
           />
         )}
       </div>
+      <InstallPrompt />
       <Toaster />
       {shareActivity && (
         <ShareInviteDialog
