@@ -8,6 +8,7 @@ import NotificationsScreen from "./pages/NotificationsScreen";
 import ProfileScreen from "./pages/ProfileScreen";
 import ContactsScreen from "./pages/ContactsScreen";
 import BottomNav from "./components/squad/BottomNav";
+import ShareInviteDialog from "./components/squad/ShareInviteDialog";
 import { AuthProvider, useAuth, Profile } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
