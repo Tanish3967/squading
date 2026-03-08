@@ -29,6 +29,7 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
   const [showDeclineConfirm, setShowDeclineConfirm] = useState(false);
   const [showCapacityPanel, setShowCapacityPanel] = useState(false);
   const [removingUserId, setRemovingUserId] = useState<string | null>(null);
+  const [showShareDialog, setShowShareDialog] = useState(false);
   const [editForm, setEditForm] = useState({
     title: activity.title,
     date: activity.date.split("T")[0],
