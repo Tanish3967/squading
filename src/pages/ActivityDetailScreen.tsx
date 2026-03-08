@@ -82,7 +82,7 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
     toast.success("Member removed from activity");
   };
 
-
+  const handleAccept = async () => {
     // If user has an existing invitee record, update it; otherwise insert one
     const { data: existing } = await supabase
       .from("invitees")
