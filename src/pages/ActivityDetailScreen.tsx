@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronLeft, Calendar, Clock, MapPin, Users, X, Check, Pencil, Trash2, Ban, Share2, CheckCheck, BellRing, UserPlus } from "lucide-react";
 import { toast } from "sonner";
-import { Activity, User, MOCK_USERS, ACTIVITY_CATEGORIES } from "@/lib/mock-data";
+import { Activity, User, ACTIVITY_CATEGORIES } from "@/lib/mock-data";
 import SquadAvatar from "@/components/squad/Avatar";
 import StatusPill from "@/components/squad/StatusPill";
 import GlowOrb from "@/components/squad/GlowOrb";
@@ -36,21 +36,84 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
     maxPeople: activity.maxPeople,
   });
 
-  const creator = MOCK_USERS.find(u => u.id === activity.creatorId) || currentUser;
+  // Fetch real profiles for creator and invitees
+  const [profilesMap, setProfilesMap] = useState<Record<string, { name: string }>>({});
+
+  useEffect(() => {
+    const userIds = new Set<string>();
+    userIds.add(activity.creatorId);
+    activity.invitees.forEach(i => userIds.add(i.userId));
+    const ids = Array.from(userIds);
+    if (ids.length === 0) return;
+
+    supabase
+      .from("profiles")
+      .select("id, name")
+      .in("id", ids)
+      .then(({ data }) => {
+        if (data) {
+          const map: Record<string, { name: string }> = {};
+          data.forEach(p => { map[p.id] = { name: p.name || "Squad Member" }; });
+          setProfilesMap(map);
+        }
+      });
+  }, [activity.creatorId, activity.invitees]);
+
+  const creatorName = profilesMap[activity.creatorId]?.name || currentUser.name;
   const isCreator = activity.creatorId === currentUser.id;
   const catInfo = ACTIVITY_CATEGORIES.find(c => c.id === activity.category);
   const joinedInvitees = activity.invitees.filter(i => i.status === "accepted");
   const myInvite = activity.invitees.find(i => i.userId === currentUser.id);
 
-  const handleAccept = () => {
+  const handleAccept = async () => {
+    // If user has an existing invitee record, update it; otherwise insert one
+    const { data: existing } = await supabase
+      .from("invitees")
+      .select("id")
+      .eq("activity_id", activity.id)
+      .eq("user_id", currentUser.id)
+      .maybeSingle();
+
+    if (existing) {
+      await supabase
+        .from("invitees")
+        .update({ status: "accepted", responded_at: new Date().toISOString() })
+        .eq("id", existing.id);
+    } else {
+      await supabase
+        .from("invitees")
+        .insert({
+          activity_id: activity.id,
+          user_id: currentUser.id,
+          status: "accepted",
+          responded_at: new Date().toISOString(),
+        });
+    }
+
     onUpdateActivity({
       ...activity,
-      invitees: activity.invitees.map(i => i.userId === currentUser.id ? { ...i, status: "accepted" } : i),
+      invitees: myInvite
+        ? activity.invitees.map(i => i.userId === currentUser.id ? { ...i, status: "accepted" } : i)
+        : [...activity.invitees, { userId: currentUser.id, status: "accepted", paid: false, attended: false }],
     });
     setShowPayment(true);
   };
 
-  const handleDecline = () => {
+  const handleDecline = async () => {
+    const { data: existing } = await supabase
+      .from("invitees")
+      .select("id")
+      .eq("activity_id", activity.id)
+      .eq("user_id", currentUser.id)
+      .maybeSingle();
+
+    if (existing) {
+      await supabase
+        .from("invitees")
+        .update({ status: "declined", responded_at: new Date().toISOString() })
+        .eq("id", existing.id);
+    }
+
     onUpdateActivity({
       ...activity,
       invitees: activity.invitees.map(i => i.userId === currentUser.id ? { ...i, status: "declined" } : i),
@@ -60,7 +123,13 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
 
   const handlePayment = () => {
     setPaymentProcessing(true);
-    setTimeout(() => {
+    setTimeout(async () => {
+      await supabase
+        .from("invitees")
+        .update({ paid: true })
+        .eq("activity_id", activity.id)
+        .eq("user_id", currentUser.id);
+
       onUpdateActivity({
         ...activity,
         invitees: activity.invitees.map(i => i.userId === currentUser.id ? { ...i, paid: true } : i),
@@ -70,7 +139,16 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
     }, 2000);
   };
 
-  const handleMarkAttendance = (userId: string) => {
+  const handleMarkAttendance = async (userId: string) => {
+    const inv = activity.invitees.find(i => i.userId === userId);
+    if (!inv) return;
+
+    await supabase
+      .from("invitees")
+      .update({ attended: !inv.attended, marked_at: new Date().toISOString() })
+      .eq("activity_id", activity.id)
+      .eq("user_id", userId);
+
     onUpdateActivity({
       ...activity,
       invitees: activity.invitees.map(i => i.userId === userId ? { ...i, attended: !i.attended } : i),
@@ -92,11 +170,9 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
   };
 
   const handleCancel = async () => {
-    // Mark activity as cancelled
     onUpdateActivity({ ...activity, status: "cancelled" });
     setShowCancelConfirm(false);
 
-    // Create refund notifications for all paid invitees
     const paidInvitees = activity.invitees.filter(i => i.paid);
     if (paidInvitees.length > 0) {
       const notifications = paidInvitees.map(inv => ({
@@ -130,6 +206,8 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
   const dayName = dateObj.toLocaleDateString("en-IN", { weekday: "long" });
   const dateStr = dateObj.toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" });
   const capacityPercent = Math.round((joinedInvitees.length / activity.maxPeople) * 100);
+
+  const getInviteeName = (userId: string) => profilesMap[userId]?.name || "Squad Member";
 
   return (
     <div className="min-h-screen flex flex-col pb-24 animate-fade-up">
@@ -185,10 +263,10 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
 
         {/* Host */}
         <div className="flex items-center gap-3 relative z-10">
-          <SquadAvatar name={creator.name} size="sm" />
+          <SquadAvatar name={creatorName} size="sm" />
           <div>
             <p className="text-xs text-muted-foreground">Hosted by</p>
-            <p className="text-sm font-semibold">{creator.name}</p>
+            <p className="text-sm font-semibold">{creatorName}</p>
           </div>
         </div>
       </div>
@@ -225,7 +303,7 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
           </div>
         )}
 
-        {/* Info strips — vertical timeline style */}
+        {/* Info strips */}
         <div className="bg-card border border-border rounded-2xl overflow-hidden divide-y divide-border">
           <div className="flex items-center gap-4 p-4">
             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
@@ -268,7 +346,7 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
           </div>
         </div>
 
-        {/* Deposit card — large prominent */}
+        {/* Deposit card */}
         <div className="relative p-6 rounded-2xl overflow-hidden border border-primary/20">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/[0.12] via-transparent to-[hsl(var(--squad-green)/0.06)]" />
           <div className="relative flex items-end justify-between">
@@ -305,8 +383,8 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
             <p className="text-xs text-muted-foreground tracking-widest uppercase">Squad ({activity.invitees.length})</p>
             <div className="flex -space-x-2">
               {joinedInvitees.slice(0, 5).map(inv => {
-                const u = MOCK_USERS.find(mu => mu.id === inv.userId);
-                return <div key={inv.userId} className="w-7 h-7 rounded-full bg-secondary border-2 border-background flex items-center justify-center text-[10px] font-bold">{u?.name?.[0] || "?"}</div>;
+                const name = getInviteeName(inv.userId);
+                return <div key={inv.userId} className="w-7 h-7 rounded-full bg-secondary border-2 border-background flex items-center justify-center text-[10px] font-bold">{name[0] || "?"}</div>;
               })}
               {joinedInvitees.length > 5 && (
                 <div className="w-7 h-7 rounded-full bg-primary/20 border-2 border-background flex items-center justify-center text-[10px] font-bold text-primary">+{joinedInvitees.length - 5}</div>
@@ -316,12 +394,12 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
 
           <div className="flex flex-col gap-2">
             {activity.invitees.map(invitee => {
-              const user = MOCK_USERS.find(u => u.id === invitee.userId) || { id: invitee.userId, name: "Squad Member", phone: "", avatar: "SM" };
+              const userName = getInviteeName(invitee.userId);
               return (
                 <div key={invitee.userId} className="flex items-center gap-3 p-3 px-4 bg-card rounded-2xl border border-border">
-                  <SquadAvatar name={user.name} size="sm" />
+                  <SquadAvatar name={userName} size="sm" />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{user.name}</p>
+                    <p className="text-sm font-medium truncate">{userName}</p>
                     <div className="flex gap-1.5 mt-0.5 flex-wrap">
                       <StatusPill status={invitee.status} />
                       {invitee.paid && <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[hsl(var(--squad-green)/0.1)] text-[hsl(var(--squad-green))] border border-[hsl(var(--squad-green)/0.2)]">💰 Paid</span>}
@@ -346,7 +424,7 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
                             `You haven't responded to "${activity.title}" yet.`,
                             { activityId: activity.id }
                           );
-                          toast.success(`Reminder sent to ${user.name}!`);
+                          toast.success(`Reminder sent to ${userName}!`);
                         }}
                         className="px-2.5 py-2 rounded-xl text-[12px] font-medium bg-primary/10 text-primary border border-primary/20 active:scale-95 transition-transform"
                       >
@@ -378,13 +456,22 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
         )}
 
         {/* Invitee CTAs */}
-        {!isCreator && myInvite && activity.status === "upcoming" && (
+        {!isCreator && activity.status === "upcoming" && (
           <div>
-            {myInvite.status === "pending" && (
+            {/* User not yet an invitee — show Join button */}
+            {!myInvite && joinedInvitees.length < activity.maxPeople && (
+              <div className="flex flex-col gap-3">
+                <p className="text-[13px] text-muted-foreground text-center">Want to join this activity?</p>
+                <button onClick={handleAccept} className="flex items-center justify-center gap-2 py-3.5 rounded-xl bg-primary text-primary-foreground font-medium shadow-saffron active:scale-[0.97] transition-all w-full">
+                  <Check size={16} /> Join & Pay ₹{activity.deposit}
+                </button>
+              </div>
+            )}
+
+            {myInvite?.status === "pending" && (
               <div className="flex flex-col gap-3">
                 <p className="text-[13px] text-muted-foreground text-center">You've been invited! Will you join?</p>
 
-                {/* Decline confirmation */}
                 {showDeclineConfirm && (
                   <div className="p-5 bg-card border border-destructive/20 rounded-2xl animate-fade-up">
                     <p className="text-sm font-bold mb-1">Decline this invite?</p>
@@ -408,18 +495,18 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
                 )}
               </div>
             )}
-            {myInvite.status === "accepted" && !myInvite.paid && (
+            {myInvite?.status === "accepted" && !myInvite.paid && (
               <button onClick={() => setShowPayment(true)} className="flex items-center justify-center gap-2 py-3.5 px-6 rounded-xl bg-[hsl(var(--squad-phonepe))] text-foreground font-medium shadow-phonepe active:scale-[0.97] transition-all w-full">
                 Complete payment · ₹{activity.deposit}
               </button>
             )}
-            {myInvite.status === "accepted" && myInvite.paid && !myInvite.attended && (
+            {myInvite?.status === "accepted" && myInvite.paid && !myInvite.attended && (
               <div className="p-5 bg-[hsl(var(--squad-green)/0.06)] border border-[hsl(var(--squad-green)/0.15)] rounded-2xl text-center">
                 <p className="text-[hsl(var(--squad-green))] font-bold mb-1">✅ You're in! Deposit paid.</p>
                 <p className="text-[13px] text-muted-foreground">Show up to get ₹{activity.deposit} refunded.</p>
               </div>
             )}
-            {myInvite.attended && (
+            {myInvite?.attended && (
               <div className="animate-pop-in p-6 bg-[hsl(var(--squad-green)/0.08)] border border-[hsl(var(--squad-green)/0.25)] rounded-2xl text-center">
                 <div className="text-4xl mb-2">🎉</div>
                 <p className="font-display text-lg font-bold text-[hsl(var(--squad-green))] mb-1">You attended!</p>
