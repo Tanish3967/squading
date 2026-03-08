@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { ChevronLeft, Calendar, Clock, MapPin, Users, X, Check, Pencil, Trash2, Ban, Share2, CheckCheck, BellRing, UserPlus, ChevronDown, UserMinus } from "lucide-react";
+import ShareInviteDialog from "@/components/squad/ShareInviteDialog";
 import { toast } from "sonner";
 import { Activity, User, ACTIVITY_CATEGORIES } from "@/lib/mock-data";
 import SquadAvatar from "@/components/squad/Avatar";
@@ -28,6 +29,7 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
   const [showDeclineConfirm, setShowDeclineConfirm] = useState(false);
   const [showCapacityPanel, setShowCapacityPanel] = useState(false);
   const [removingUserId, setRemovingUserId] = useState<string | null>(null);
+  const [showShareDialog, setShowShareDialog] = useState(false);
   const [editForm, setEditForm] = useState({
     title: activity.title,
     date: activity.date.split("T")[0],
@@ -240,12 +242,7 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
           </button>
           <div className="flex gap-2">
             <button
-              onClick={() => {
-                const joinUrl = `${window.location.origin}/join/${activity.id}`;
-                navigator.clipboard.writeText(joinUrl).then(() => {
-                  toast.success("Invite link copied to clipboard!");
-                });
-              }}
+              onClick={() => setShowShareDialog(true)}
               className="w-11 h-11 rounded-2xl bg-background/60 backdrop-blur-xl border border-border flex items-center justify-center text-foreground active:scale-95 transition-transform"
             >
               <Share2 size={16} />
@@ -621,7 +618,24 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
             currentUserName={currentUser.name}
           />
         )}
+        {/* Activity Chat */}
+        {activity.status !== "cancelled" && (isCreator || myInvite) && (
+          <ActivityComments
+            activityId={activity.id}
+            currentUserId={currentUser.id}
+            currentUserName={currentUser.name}
+          />
+        )}
       </div>
+
+      {/* Share Dialog */}
+      {showShareDialog && (
+        <ShareInviteDialog
+          activity={activity}
+          inviteeNames={activity.invitees.map(i => getInviteeName(i.userId))}
+          onClose={() => setShowShareDialog(false)}
+        />
+      )}
     </div>
   );
 }
