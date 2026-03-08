@@ -23,11 +23,15 @@ export default function LoginScreen() {
     try {
       const result = await checkPhone(phone);
       if (result.exists && result.totp_enabled) {
+        // Returning user — go to TOTP login
         setStep("totp-login");
       } else if (result.exists && !result.totp_enabled) {
-        // User exists but hasn't set up TOTP yet — treat as new setup
-        // Re-register would fail, so we go to login with a note
-        setStep("totp-login");
+        // User exists but hasn't completed TOTP setup — re-generate secret
+        const regResult = await resetupTOTP(phone);
+        setUserId(regResult.user_id);
+        setTotpSecret(regResult.totp_secret);
+        setOtpauthUri(regResult.otpauth_uri);
+        setStep("qr-setup");
       } else {
         // New user — register
         const regResult = await registerPhone(phone);

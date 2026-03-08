@@ -1,6 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
-import { encode as base32Encode, decode as base32Decode } from "https://deno.land/std@0.208.0/encoding/base32.ts";
-import { crypto } from "https://deno.land/std@0.208.0/crypto/mod.ts";
+import { authenticator } from "npm:otplib@12.0.1";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -38,65 +37,14 @@ function decryptSecret(encryptedBase64: string): string {
   return new TextDecoder().decode(decrypted);
 }
 
-function generateTOTPSecret(): string {
-  const bytes = crypto.getRandomValues(new Uint8Array(20));
-  return base32Encode(bytes);
+function json(body: Record<string, unknown>, status = 200) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
 }
 
-// Convert a number to an 8-byte big-endian buffer
-function intToBytes(num: number): Uint8Array {
-  const bytes = new Uint8Array(8);
-  for (let i = 7; i >= 0; i--) {
-    bytes[i] = num & 0xff;
-    num = Math.floor(num / 256);
-  }
-  return bytes;
-}
-
-// RFC 6238 TOTP using HMAC-SHA1
-async function generateTOTP(secret: string, timeStep = 30, time?: number): Promise<string> {
-  const counter = time ?? Math.floor(Date.now() / 1000 / timeStep);
-  const counterBytes = intToBytes(counter);
-
-  // Decode base32 secret to raw bytes
-  const keyBytes = base32Decode(secret);
-
-  // Import key for HMAC-SHA1
-  const cryptoKey = await crypto.subtle.importKey(
-    "raw",
-    keyBytes,
-    { name: "HMAC", hash: "SHA-1" },
-    false,
-    ["sign"]
-  );
-
-  // Sign the counter with HMAC-SHA1
-  const signature = await crypto.subtle.sign("HMAC", cryptoKey, counterBytes);
-  const hmac = new Uint8Array(signature);
-
-  // Dynamic truncation (RFC 4226)
-  const offset = hmac[hmac.length - 1] & 0x0f;
-  const binary =
-    ((hmac[offset] & 0x7f) << 24) |
-    ((hmac[offset + 1] & 0xff) << 16) |
-    ((hmac[offset + 2] & 0xff) << 8) |
-    (hmac[offset + 3] & 0xff);
-
-  const otp = binary % 1000000;
-  return otp.toString().padStart(6, "0");
-}
-
-async function verifyTOTP(secret: string, code: string, window = 1): Promise<boolean> {
-  const timeStep = 30;
-  const currentCounter = Math.floor(Date.now() / 1000 / timeStep);
-
-  for (let i = -window; i <= window; i++) {
-    const expected = await generateTOTP(secret, timeStep, currentCounter + i);
-    if (expected === code) return true;
-  }
-  return false;
-}
-
+// ── check-phone ──────────────────────────────────────────────
 async function handleCheckPhone(phone: string) {
   const admin = getAdminClient();
   const { data: profile } = await admin
@@ -105,15 +53,13 @@ async function handleCheckPhone(phone: string) {
     .eq("phone", phone)
     .maybeSingle();
 
-  return new Response(
-    JSON.stringify({
-      exists: !!profile,
-      totp_enabled: profile?.totp_enabled ?? false,
-    }),
-    { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-  );
+  return json({
+    exists: !!profile,
+    totp_enabled: profile?.totp_enabled ?? false,
+  });
 }
 
+// ── register (new user) ─────────────────────────────────────
 async function handleRegister(phone: string) {
   const admin = getAdminClient();
 
@@ -124,69 +70,85 @@ async function handleRegister(phone: string) {
     .maybeSingle();
 
   if (existing) {
-    return new Response(
-      JSON.stringify({ error: "Phone number already registered" }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return json({ error: "Phone number already registered" }, 400);
   }
 
   const email = `${phone}@squad.app`;
   const password = crypto.randomUUID();
 
-  // Check if auth user already exists (orphaned from deleted profile)
-  const { data: existingUsers } = await admin.auth.admin.listUsers();
-  const existingAuthUser = existingUsers?.users?.find((u: any) => u.email === email);
-  
-  let userId: string;
+  // Create auth user
+  const { data: authUser, error: authError } = await admin.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    user_metadata: { phone },
+  });
 
-  if (existingAuthUser) {
-    // Reuse existing auth user — delete old TOTP secret if any
-    userId = existingAuthUser.id;
-    await admin.from("totp_secrets").delete().eq("user_id", userId);
-  } else {
-    const { data: authUser, error: authError } = await admin.auth.admin.createUser({
-      email,
-      password,
-      email_confirm: true,
-      user_metadata: { phone },
-    });
-
-    if (authError) {
-      return new Response(
-        JSON.stringify({ error: authError.message }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+  if (authError) {
+    // If user already exists in auth (orphaned), reuse them
+    if (authError.message?.includes("already been registered")) {
+      const { data: users } = await admin.auth.admin.listUsers({ filter: email });
+      const existingUser = users?.users?.[0];
+      if (existingUser) {
+        return await setupTOTPForUser(admin, existingUser.id, phone);
+      }
     }
-    userId = authUser.user.id;
+    return json({ error: authError.message }, 400);
   }
 
-  await admin.from("profiles").insert({
+  const userId = authUser.user.id;
+
+  // Create profile
+  await admin.from("profiles").upsert({
     id: userId,
     phone,
     totp_enabled: false,
   });
 
-  const totpSecret = generateTOTPSecret();
-  const encrypted = encryptSecret(totpSecret);
-
-  await admin.from("totp_secrets").insert({
-    user_id: userId,
-    secret: encrypted,
-  });
-
-  const otpauthUri = `otpauth://totp/Squad:+91${phone}?secret=${totpSecret}&issuer=Squad&digits=6&period=30`;
-
-  return new Response(
-    JSON.stringify({
-      user_id: userId,
-      totp_secret: totpSecret,
-      otpauth_uri: otpauthUri,
-      manual_key: totpSecret,
-    }),
-    { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-  );
+  return await setupTOTPForUser(admin, userId, phone);
 }
 
+// ── re-setup TOTP for existing user who hasn't completed setup ──
+async function handleResetup(phone: string) {
+  const admin = getAdminClient();
+
+  const { data: profile } = await admin
+    .from("profiles")
+    .select("id")
+    .eq("phone", phone)
+    .single();
+
+  if (!profile) {
+    return json({ error: "Phone number not found" }, 404);
+  }
+
+  // Delete old TOTP secret and re-generate
+  await admin.from("totp_secrets").delete().eq("user_id", profile.id);
+
+  return await setupTOTPForUser(admin, profile.id, phone);
+}
+
+// ── shared: generate & store TOTP secret ────────────────────
+async function setupTOTPForUser(admin: ReturnType<typeof getAdminClient>, userId: string, phone: string) {
+  const totpSecret = authenticator.generateSecret();
+  const encrypted = encryptSecret(totpSecret);
+
+  await admin.from("totp_secrets").upsert({
+    user_id: userId,
+    secret: encrypted,
+  }, { onConflict: "user_id" });
+
+  const otpauthUri = authenticator.keyuri(`+91${phone}`, "Squad", totpSecret);
+
+  return json({
+    user_id: userId,
+    totp_secret: totpSecret,
+    otpauth_uri: otpauthUri,
+    manual_key: totpSecret,
+  });
+}
+
+// ── verify-setup (first time code entry) ────────────────────
 async function handleVerifySetup(userId: string, code: string) {
   const admin = getAdminClient();
 
@@ -197,19 +159,13 @@ async function handleVerifySetup(userId: string, code: string) {
     .single();
 
   if (!totpData) {
-    return new Response(
-      JSON.stringify({ error: "TOTP not set up" }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return json({ error: "TOTP not set up" }, 400);
   }
 
   const secret = decryptSecret(totpData.secret);
-  const valid = await verifyTOTP(secret, code);
+  const valid = authenticator.check(code, secret);
   if (!valid) {
-    return new Response(
-      JSON.stringify({ error: "Invalid code" }),
-      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return json({ error: "Invalid code" }, 401);
   }
 
   await admin.from("profiles").update({ totp_enabled: true }).eq("id", userId);
@@ -227,18 +183,13 @@ async function handleVerifySetup(userId: string, code: string) {
   });
 
   if (error) {
-    return new Response(
-      JSON.stringify({ error: "Failed to create session" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return json({ error: "Failed to create session" }, 500);
   }
 
-  return new Response(
-    JSON.stringify({ success: true, profile, token_hash: session.properties?.hashed_token }),
-    { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-  );
+  return json({ success: true, profile, token_hash: session.properties?.hashed_token });
 }
 
+// ── login (returning user) ──────────────────────────────────
 async function handleLogin(phone: string, code: string) {
   const admin = getAdminClient();
 
@@ -249,10 +200,7 @@ async function handleLogin(phone: string, code: string) {
     .single();
 
   if (!profile) {
-    return new Response(
-      JSON.stringify({ error: "Phone number not found" }),
-      { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return json({ error: "Phone number not found" }, 404);
   }
 
   const { data: totpData } = await admin
@@ -262,19 +210,13 @@ async function handleLogin(phone: string, code: string) {
     .single();
 
   if (!totpData) {
-    return new Response(
-      JSON.stringify({ error: "TOTP not configured" }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return json({ error: "TOTP not configured" }, 400);
   }
 
   const secret = decryptSecret(totpData.secret);
-  const valid = await verifyTOTP(secret, code);
+  const valid = authenticator.check(code, secret);
   if (!valid) {
-    return new Response(
-      JSON.stringify({ error: "Invalid code" }),
-      { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return json({ error: "Invalid code" }, 401);
   }
 
   const email = `${phone}@squad.app`;
@@ -284,22 +226,13 @@ async function handleLogin(phone: string, code: string) {
   });
 
   if (error) {
-    return new Response(
-      JSON.stringify({ error: "Failed to create session" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return json({ error: "Failed to create session" }, 500);
   }
 
-  return new Response(
-    JSON.stringify({
-      success: true,
-      profile,
-      token_hash: session.properties?.hashed_token,
-    }),
-    { headers: { ...corsHeaders, "Content-Type": "application/json" } }
-  );
+  return json({ success: true, profile, token_hash: session.properties?.hashed_token });
 }
 
+// ── Router ──────────────────────────────────────────────────
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -315,20 +248,16 @@ Deno.serve(async (req) => {
         return await handleCheckPhone(body.phone);
       case "register":
         return await handleRegister(body.phone);
+      case "resetup":
+        return await handleResetup(body.phone);
       case "verify-setup":
         return await handleVerifySetup(body.user_id, body.code);
       case "login":
         return await handleLogin(body.phone, body.code);
       default:
-        return new Response(
-          JSON.stringify({ error: "Not found" }),
-          { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return json({ error: "Not found" }, 404);
     }
   } catch (error) {
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return json({ error: error.message }, 500);
   }
 });
