@@ -114,7 +114,7 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
     <div className="min-h-screen flex flex-col pb-24 animate-fade-up">
       {/* Hero Header */}
       <div className="relative pt-12 pb-8 px-6 overflow-hidden">
-        <GlowOrb color={catInfo?.color || "hsl(var(--primary))"} size={350} top="-100px" right="-120px" />
+        <GlowOrb color="hsl(var(--primary))" size={350} top="-100px" right="-120px" />
         <GlowOrb color="hsl(var(--squad-green))" size={200} top="60px" right="200px" />
 
         {/* Nav bar */}
