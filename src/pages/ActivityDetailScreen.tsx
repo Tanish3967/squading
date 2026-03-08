@@ -52,6 +52,7 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
       ...activity,
       invitees: activity.invitees.map(i => i.userId === currentUser.id ? { ...i, status: "declined" } : i),
     });
+    setShowDeclineConfirm(false);
   };
 
   const handlePayment = () => {
