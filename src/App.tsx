@@ -329,9 +329,7 @@ function AppContent() {
     setScreen(tab);
   };
 
-  const pendingCount = activities.filter((a) =>
-    a.invitees.some((i) => i.userId === currentUser.id && i.status === "pending")
-  ).length;
+  const pendingCount = unreadNotifCount;
 
   const renderScreen = () => {
     if (screen === "contacts") {
