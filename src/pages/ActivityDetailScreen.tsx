@@ -90,9 +90,24 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
     setShowEdit(false);
   };
 
-  const handleCancel = () => {
+  const handleCancel = async () => {
+    // Mark activity as cancelled
     onUpdateActivity({ ...activity, status: "cancelled" });
     setShowCancelConfirm(false);
+
+    // Create refund notifications for all paid invitees
+    const paidInvitees = activity.invitees.filter(i => i.paid);
+    if (paidInvitees.length > 0) {
+      const notifications = paidInvitees.map(inv => ({
+        user_id: inv.userId,
+        activity_id: activity.id,
+        type: "refund",
+        title: "Activity Cancelled — Refund Incoming",
+        body: `"${activity.title}" was cancelled by the host. Your ₹${activity.deposit} deposit will be refunded.`,
+      }));
+      await supabase.from("notifications").insert(notifications);
+    }
+    toast.success("Activity cancelled. Paid invitees will be notified about refunds.");
   };
 
   const handleDelete = () => {
