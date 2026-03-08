@@ -9,6 +9,7 @@ import ActivityEditForm from "@/components/squad/ActivityEditForm";
 import PaymentScreen from "@/components/squad/PaymentScreen";
 import ActivityComments from "@/components/squad/ActivityComments";
 import { supabase } from "@/integrations/supabase/client";
+import { sendPush } from "@/hooks/usePushNotifications";
 
 interface Props {
   activity: Activity;
