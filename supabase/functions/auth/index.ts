@@ -133,22 +133,35 @@ async function handleRegister(phone: string) {
   const email = `${phone}@squad.app`;
   const password = crypto.randomUUID();
 
-  const { data: authUser, error: authError } = await admin.auth.admin.createUser({
-    email,
-    password,
-    email_confirm: true,
-    user_metadata: { phone },
-  });
+  // Check if auth user already exists (orphaned from deleted profile)
+  const { data: existingUsers } = await admin.auth.admin.listUsers();
+  const existingAuthUser = existingUsers?.users?.find((u: any) => u.email === email);
+  
+  let userId: string;
 
-  if (authError) {
-    return new Response(
-      JSON.stringify({ error: authError.message }),
-      { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+  if (existingAuthUser) {
+    // Reuse existing auth user — delete old TOTP secret if any
+    userId = existingAuthUser.id;
+    await admin.from("totp_secrets").delete().eq("user_id", userId);
+  } else {
+    const { data: authUser, error: authError } = await admin.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: { phone },
+    });
+
+    if (authError) {
+      return new Response(
+        JSON.stringify({ error: authError.message }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    userId = authUser.user.id;
   }
 
   await admin.from("profiles").insert({
-    id: authUser.user.id,
+    id: userId,
     phone,
     totp_enabled: false,
   });
@@ -157,7 +170,7 @@ async function handleRegister(phone: string) {
   const encrypted = encryptSecret(totpSecret);
 
   await admin.from("totp_secrets").insert({
-    user_id: authUser.user.id,
+    user_id: userId,
     secret: encrypted,
   });
 
@@ -165,7 +178,7 @@ async function handleRegister(phone: string) {
 
   return new Response(
     JSON.stringify({
-      user_id: authUser.user.id,
+      user_id: userId,
       totp_secret: totpSecret,
       otpauth_uri: otpauthUri,
       manual_key: totpSecret,
