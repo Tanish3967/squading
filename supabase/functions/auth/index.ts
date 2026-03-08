@@ -161,7 +161,7 @@ async function handleRegister(phone: string) {
   }
 
   await admin.from("profiles").insert({
-    id: authUser.user.id,
+    id: userId,
     phone,
     totp_enabled: false,
   });
@@ -170,7 +170,7 @@ async function handleRegister(phone: string) {
   const encrypted = encryptSecret(totpSecret);
 
   await admin.from("totp_secrets").insert({
-    user_id: authUser.user.id,
+    user_id: userId,
     secret: encrypted,
   });
 
@@ -178,7 +178,7 @@ async function handleRegister(phone: string) {
 
   return new Response(
     JSON.stringify({
-      user_id: authUser.user.id,
+      user_id: userId,
       totp_secret: totpSecret,
       otpauth_uri: otpauthUri,
       manual_key: totpSecret,
