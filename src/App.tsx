@@ -327,6 +327,10 @@ function AppContent() {
   const handleTabChange = (tab: string) => {
     setActiveTab(tab);
     setScreen(tab);
+    if (tab === "notifications") {
+      // Reset badge count when viewing notifications
+      setUnreadNotifCount(0);
+    }
   };
 
   const pendingCount = unreadNotifCount;
