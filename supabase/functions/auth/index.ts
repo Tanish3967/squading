@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
-import { encode as base32Encode } from "https://deno.land/std@0.208.0/encoding/base32.ts";
+import { encode as base32Encode, decode as base32Decode } from "https://deno.land/std@0.208.0/encoding/base32.ts";
 import { crypto } from "https://deno.land/std@0.208.0/crypto/mod.ts";
 
 const corsHeaders = {
@@ -18,7 +18,6 @@ function getAdminClient() {
   });
 }
 
-// Simple XOR-based encryption for TOTP secrets (for demo; use AES in production)
 function encryptSecret(secret: string): string {
   const keyBytes = new TextEncoder().encode(encryptionKey);
   const secretBytes = new TextEncoder().encode(secret);
@@ -44,34 +43,55 @@ function generateTOTPSecret(): string {
   return base32Encode(bytes);
 }
 
-function generateTOTP(secret: string, timeStep = 30): string {
-  const time = Math.floor(Date.now() / 1000 / timeStep);
-  // Simple TOTP: use HMAC-based approach
-  // For a proper implementation you'd use HMAC-SHA1, but for this demo
-  // we'll use a deterministic approach based on time and secret
-  const combined = `${secret}:${time}`;
-  let hash = 0;
-  for (let i = 0; i < combined.length; i++) {
-    const char = combined.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
+// Convert a number to an 8-byte big-endian buffer
+function intToBytes(num: number): Uint8Array {
+  const bytes = new Uint8Array(8);
+  for (let i = 7; i >= 0; i--) {
+    bytes[i] = num & 0xff;
+    num = Math.floor(num / 256);
   }
-  const code = Math.abs(hash % 1000000);
-  return code.toString().padStart(6, "0");
+  return bytes;
 }
 
-function verifyTOTP(secret: string, code: string, window = 1): boolean {
+// RFC 6238 TOTP using HMAC-SHA1
+async function generateTOTP(secret: string, timeStep = 30, time?: number): Promise<string> {
+  const counter = time ?? Math.floor(Date.now() / 1000 / timeStep);
+  const counterBytes = intToBytes(counter);
+
+  // Decode base32 secret to raw bytes
+  const keyBytes = base32Decode(secret);
+
+  // Import key for HMAC-SHA1
+  const cryptoKey = await crypto.subtle.importKey(
+    "raw",
+    keyBytes,
+    { name: "HMAC", hash: "SHA-1" },
+    false,
+    ["sign"]
+  );
+
+  // Sign the counter with HMAC-SHA1
+  const signature = await crypto.subtle.sign("HMAC", cryptoKey, counterBytes);
+  const hmac = new Uint8Array(signature);
+
+  // Dynamic truncation (RFC 4226)
+  const offset = hmac[hmac.length - 1] & 0x0f;
+  const binary =
+    ((hmac[offset] & 0x7f) << 24) |
+    ((hmac[offset + 1] & 0xff) << 16) |
+    ((hmac[offset + 2] & 0xff) << 8) |
+    (hmac[offset + 3] & 0xff);
+
+  const otp = binary % 1000000;
+  return otp.toString().padStart(6, "0");
+}
+
+async function verifyTOTP(secret: string, code: string, window = 1): Promise<boolean> {
   const timeStep = 30;
+  const currentCounter = Math.floor(Date.now() / 1000 / timeStep);
+
   for (let i = -window; i <= window; i++) {
-    const time = Math.floor(Date.now() / 1000 / timeStep) + i;
-    const combined = `${secret}:${time}`;
-    let hash = 0;
-    for (let j = 0; j < combined.length; j++) {
-      const char = combined.charCodeAt(j);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash;
-    }
-    const expected = Math.abs(hash % 1000000).toString().padStart(6, "0");
+    const expected = await generateTOTP(secret, timeStep, currentCounter + i);
     if (expected === code) return true;
   }
   return false;
@@ -97,7 +117,6 @@ async function handleCheckPhone(phone: string) {
 async function handleRegister(phone: string) {
   const admin = getAdminClient();
 
-  // Check if phone already exists
   const { data: existing } = await admin
     .from("profiles")
     .select("id")
@@ -111,7 +130,6 @@ async function handleRegister(phone: string) {
     );
   }
 
-  // Create auth user with email = phone@squad.app
   const email = `${phone}@squad.app`;
   const password = crypto.randomUUID();
 
@@ -129,14 +147,12 @@ async function handleRegister(phone: string) {
     );
   }
 
-  // Create profile
   await admin.from("profiles").insert({
     id: authUser.user.id,
     phone,
     totp_enabled: false,
   });
 
-  // Generate TOTP secret
   const totpSecret = generateTOTPSecret();
   const encrypted = encryptSecret(totpSecret);
 
@@ -145,7 +161,6 @@ async function handleRegister(phone: string) {
     secret: encrypted,
   });
 
-  // Generate otpauth URI for QR code
   const otpauthUri = `otpauth://totp/Squad:+91${phone}?secret=${totpSecret}&issuer=Squad&digits=6&period=30`;
 
   return new Response(
@@ -176,17 +191,16 @@ async function handleVerifySetup(userId: string, code: string) {
   }
 
   const secret = decryptSecret(totpData.secret);
-  if (!verifyTOTP(secret, code)) {
+  const valid = await verifyTOTP(secret, code);
+  if (!valid) {
     return new Response(
       JSON.stringify({ error: "Invalid code" }),
       { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
-  // Mark TOTP as enabled
   await admin.from("profiles").update({ totp_enabled: true }).eq("id", userId);
 
-  // Sign in the user
   const { data: profile } = await admin
     .from("profiles")
     .select("*")
@@ -194,7 +208,6 @@ async function handleVerifySetup(userId: string, code: string) {
     .single();
 
   const email = `${profile!.phone}@squad.app`;
-  // Generate a session by signing in
   const { data: session, error } = await admin.auth.admin.generateLink({
     type: "magiclink",
     email,
@@ -243,14 +256,14 @@ async function handleLogin(phone: string, code: string) {
   }
 
   const secret = decryptSecret(totpData.secret);
-  if (!verifyTOTP(secret, code)) {
+  const valid = await verifyTOTP(secret, code);
+  if (!valid) {
     return new Response(
       JSON.stringify({ error: "Invalid code" }),
       { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
-  // Generate session token
   const email = `${phone}@squad.app`;
   const { data: session, error } = await admin.auth.admin.generateLink({
     type: "magiclink",
