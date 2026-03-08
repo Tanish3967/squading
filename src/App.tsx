@@ -320,7 +320,7 @@ function AppContent() {
       return <NotificationsScreen currentUser={currentUser} activities={activities} onActivityClick={handleActivityClick} />;
     }
     if (activeTab === "profile") {
-      return <ProfileScreen currentUser={currentUser} activities={activities} onLogout={handleLogout} onContactsClick={() => setScreen("contacts")} />;
+      return <ProfileScreen currentUser={currentUser} activities={activities} onLogout={handleLogout} onContactsClick={() => setScreen("contacts")} onEditProfileClick={() => setScreen("edit-profile")} />;
     }
     return (
       <HomeScreen
