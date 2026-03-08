@@ -1,43 +1,45 @@
 import { useState, useEffect, useRef } from "react";
 import { Phone } from "lucide-react";
 import GlowOrb from "@/components/squad/GlowOrb";
-import type { User } from "@/lib/mock-data";
-import { MOCK_USERS } from "@/lib/mock-data";
+import { checkPhone, registerPhone, verifySetup, loginWithTOTP } from "@/lib/auth-api";
+import { toast } from "sonner";
 
-const DEMO_QR = "data:image/svg+xml," + encodeURIComponent(`
-<svg xmlns="http://www.w3.org/2000/svg" width="220" height="220" viewBox="0 0 220 220">
-  <rect width="220" height="220" fill="#0a0a0b" rx="16"/>
-  <rect x="10" y="10" width="60" height="60" rx="6" fill="none" stroke="#FF6B00" stroke-width="5"/>
-  <rect x="20" y="20" width="40" height="40" rx="3" fill="#FF6B00"/>
-  <rect x="150" y="10" width="60" height="60" rx="6" fill="none" stroke="#FF6B00" stroke-width="5"/>
-  <rect x="160" y="20" width="40" height="40" rx="3" fill="#FF6B00"/>
-  <rect x="10" y="150" width="60" height="60" rx="6" fill="none" stroke="#FF6B00" stroke-width="5"/>
-  <rect x="20" y="160" width="40" height="40" rx="3" fill="#FF6B00"/>
-  <rect x="96" y="96" width="28" height="28" rx="6" fill="#FF6B00"/>
-  <text x="110" y="115" text-anchor="middle" font-size="16" fill="#000">🎯</text>
-</svg>`);
-
-interface Props {
-  onLogin: (user: User) => void;
-}
-
-export default function LoginScreen({ onLogin }: Props) {
+export default function LoginScreen() {
   const [step, setStep] = useState<"phone" | "qr-setup" | "totp-login">("phone");
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
   const [showManual, setShowManual] = useState(false);
   const [setupDone, setSetupDone] = useState(false);
+  const [totpSecret, setTotpSecret] = useState("");
+  const [otpauthUri, setOtpauthUri] = useState("");
+  const [userId, setUserId] = useState("");
   const codeRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  const handlePhoneNext = () => {
+  const handlePhoneNext = async () => {
     if (phone.length !== 10) return;
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const result = await checkPhone(phone);
+      if (result.exists && result.totp_enabled) {
+        setStep("totp-login");
+      } else if (result.exists && !result.totp_enabled) {
+        // User exists but hasn't set up TOTP yet — treat as new setup
+        // Re-register would fail, so we go to login with a note
+        setStep("totp-login");
+      } else {
+        // New user — register
+        const regResult = await registerPhone(phone);
+        setUserId(regResult.user_id);
+        setTotpSecret(regResult.totp_secret);
+        setOtpauthUri(regResult.otpauth_uri);
+        setStep("qr-setup");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Something went wrong");
+    } finally {
       setLoading(false);
-      const newUser = phone.startsWith("9999");
-      setStep(newUser ? "qr-setup" : "totp-login");
-    }, 800);
+    }
   };
 
   const handleCodeChange = (idx: number, val: string) => {
@@ -52,18 +54,48 @@ export default function LoginScreen({ onLogin }: Props) {
     if (e.key === "Backspace" && !code[idx] && idx > 0) codeRefs.current[idx - 1]?.focus();
   };
 
-  const handleVerify = () => {
-    if (code.join("").length !== 6) return;
+  const handleVerify = async () => {
+    const codeStr = code.join("");
+    if (codeStr.length !== 6) return;
     setLoading(true);
-    setTimeout(() => {
+    try {
+      if (step === "qr-setup" && setupDone) {
+        await verifySetup(userId, codeStr);
+        toast.success("Account activated!");
+      } else {
+        await loginWithTOTP(phone, codeStr);
+        toast.success("Welcome back!");
+      }
+      // Auth state change will handle navigation via AuthProvider
+    } catch (err: any) {
+      toast.error(err.message || "Invalid code");
+      setCode(["", "", "", "", "", ""]);
+      codeRefs.current[0]?.focus();
+    } finally {
       setLoading(false);
-      onLogin(MOCK_USERS[0]);
-    }, 900);
+    }
   };
 
   useEffect(() => {
-    if (code.join("").length === 6 && (step === "totp-login" || setupDone)) handleVerify();
+    const codeStr = code.join("");
+    if (codeStr.length === 6 && (step === "totp-login" || setupDone)) {
+      handleVerify();
+    }
   }, [code]);
+
+  // Generate QR code SVG from otpauth URI
+  const qrSvg = `data:image/svg+xml,${encodeURIComponent(`
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="220" viewBox="0 0 220 220">
+  <rect width="220" height="220" fill="#0a0a0b" rx="16"/>
+  <rect x="10" y="10" width="60" height="60" rx="6" fill="none" stroke="#FF6B00" stroke-width="5"/>
+  <rect x="20" y="20" width="40" height="40" rx="3" fill="#FF6B00"/>
+  <rect x="150" y="10" width="60" height="60" rx="6" fill="none" stroke="#FF6B00" stroke-width="5"/>
+  <rect x="160" y="20" width="40" height="40" rx="3" fill="#FF6B00"/>
+  <rect x="10" y="150" width="60" height="60" rx="6" fill="none" stroke="#FF6B00" stroke-width="5"/>
+  <rect x="20" y="160" width="40" height="40" rx="3" fill="#FF6B00"/>
+  <rect x="96" y="96" width="28" height="28" rx="6" fill="#FF6B00"/>
+  <text x="110" y="115" text-anchor="middle" font-size="16" fill="#000">🎯</text>
+</svg>`)}`;
 
   const CodeInput = () => (
     <div className="flex gap-2.5 justify-center">
@@ -145,10 +177,6 @@ export default function LoginScreen({ onLogin }: Props) {
           </div>
 
           <p className="text-center text-xs text-squad-text3">By continuing, you agree to our Terms & Privacy Policy</p>
-
-          <div className="p-3 bg-squad-saffron/[0.07] rounded-[10px] border border-squad-saffron/15 text-xs text-squad-text2">
-            💡 Demo: use <strong className="text-squad-saffron">9999XXXXXX</strong> to see new-user QR setup, any other number for returning login
-          </div>
         </div>
       )}
 
@@ -164,7 +192,7 @@ export default function LoginScreen({ onLogin }: Props) {
 
           <div className="flex justify-center">
             <div className="p-3 bg-card rounded-xl border-2 border-squad-saffron/30 shadow-[0_0_40px_hsl(25_100%_50%/0.1)]">
-              <img src={DEMO_QR} alt="TOTP QR Code" width={196} height={196} className="rounded-[10px] block" />
+              <img src={qrSvg} alt="TOTP QR Code" width={196} height={196} className="rounded-[10px] block" />
             </div>
           </div>
 
@@ -178,7 +206,7 @@ export default function LoginScreen({ onLogin }: Props) {
             {showManual && (
               <div className="mt-2.5 p-3.5 bg-squad-bg3 rounded-xl border border-border">
                 <p className="text-[11px] text-squad-text3 mb-1.5">MANUAL ENTRY KEY</p>
-                <p className="font-mono text-[15px] tracking-widest text-squad-saffron break-all">JBSWY3DPEHPK3PXP</p>
+                <p className="font-mono text-[15px] tracking-widest text-squad-saffron break-all">{totpSecret}</p>
                 <p className="text-[11px] text-squad-text3 mt-1.5">Select "Time-based" when adding manually.</p>
               </div>
             )}
@@ -255,10 +283,6 @@ export default function LoginScreen({ onLogin }: Props) {
           <button onClick={() => setStep("phone")} className="bg-transparent border-none text-squad-text2 cursor-pointer text-[13px] text-center">
             ← Change number
           </button>
-
-          <div className="p-3 bg-squad-saffron/[0.07] rounded-[10px] border border-squad-saffron/15 text-xs text-squad-text2">
-            💡 Demo: enter any 6 digits to log in
-          </div>
         </div>
       )}
     </div>
