@@ -327,16 +327,36 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
                       {invitee.attended && <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[hsl(var(--squad-green)/0.1)] text-[hsl(var(--squad-green))] border border-[hsl(var(--squad-green)/0.2)]">✓ Attended</span>}
                     </div>
                   </div>
-                  {isCreator && invitee.status === "accepted" && invitee.paid && (
-                    <button onClick={() => handleMarkAttendance(invitee.userId)}
-                      className={`px-3 py-2 rounded-xl text-[13px] font-medium transition-all ${
-                        invitee.attended
-                          ? "bg-transparent text-foreground border border-border"
-                          : "bg-[hsl(var(--squad-green))] text-primary-foreground shadow-green"
-                      }`}>
-                      {invitee.attended ? "Undo" : "Mark ✓"}
-                    </button>
-                  )}
+                  <div className="flex gap-1.5">
+                    {/* Nudge button for creator on pending invitees */}
+                    {isCreator && invitee.status === "pending" && (
+                      <button
+                        onClick={async () => {
+                          await supabase.from("notifications").insert({
+                            user_id: invitee.userId,
+                            activity_id: activity.id,
+                            type: "reminder",
+                            title: "Reminder: You have a pending invite!",
+                            body: `${currentUser.name} is waiting for your response to "${activity.title}". Tap to respond.`,
+                          });
+                          toast.success(`Reminder sent to ${user.name}!`);
+                        }}
+                        className="px-2.5 py-2 rounded-xl text-[12px] font-medium bg-primary/10 text-primary border border-primary/20 active:scale-95 transition-transform"
+                      >
+                        <BellRing size={14} />
+                      </button>
+                    )}
+                    {isCreator && invitee.status === "accepted" && invitee.paid && (
+                      <button onClick={() => handleMarkAttendance(invitee.userId)}
+                        className={`px-3 py-2 rounded-xl text-[13px] font-medium transition-all ${
+                          invitee.attended
+                            ? "bg-transparent text-foreground border border-border"
+                            : "bg-[hsl(var(--squad-green))] text-primary-foreground shadow-green"
+                        }`}>
+                        {invitee.attended ? "Undo" : "Mark ✓"}
+                      </button>
+                    )}
+                  </div>
                 </div>
               );
             })}
