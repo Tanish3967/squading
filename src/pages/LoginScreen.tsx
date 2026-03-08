@@ -292,7 +292,7 @@ export default function LoginScreen() {
               Enter the 6-digit code shown for <strong className="text-foreground">Squad</strong> in your authenticator app to confirm setup.
             </p>
           </div>
-          <CodeInput />
+          {codeInputJSX}
           <div className="flex items-center gap-2 p-3 bg-squad-green/5 border border-squad-green/15 rounded-xl">
             <span className="text-base">⏱️</span>
             <p className="text-[13px] text-squad-text2">The code refreshes every 30 seconds. Enter it before it changes.</p>
