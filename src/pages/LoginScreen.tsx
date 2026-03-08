@@ -18,6 +18,7 @@ export default function LoginScreen() {
   const [userId, setUserId] = useState("");
   const [isNewUser, setIsNewUser] = useState(false);
   const [displayName, setDisplayName] = useState("");
+  const [shaking, setShaking] = useState(false);
   const codeRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const handlePhoneNext = async () => {
