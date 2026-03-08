@@ -344,6 +344,7 @@ function AppContent() {
           />
         )}
       </div>
+      <InstallPrompt />
       <Toaster />
       {shareActivity && (
         <ShareInviteDialog
