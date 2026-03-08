@@ -290,6 +290,9 @@ function AppContent() {
     if (screen === "contacts") {
       return <ContactsScreen onBack={() => { setScreen("profile"); setActiveTab("profile"); }} />;
     }
+    if (screen === "edit-profile") {
+      return <EditProfileScreen currentUser={currentUser} onBack={() => { setScreen("profile"); setActiveTab("profile"); }} />;
+    }
     if (screen === "create") {
       return (
         <CreateActivityScreen
