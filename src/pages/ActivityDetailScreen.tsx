@@ -620,7 +620,24 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
             currentUserName={currentUser.name}
           />
         )}
+        {/* Activity Chat */}
+        {activity.status !== "cancelled" && (isCreator || myInvite) && (
+          <ActivityComments
+            activityId={activity.id}
+            currentUserId={currentUser.id}
+            currentUserName={currentUser.name}
+          />
+        )}
       </div>
+
+      {/* Share Dialog */}
+      {showShareDialog && (
+        <ShareInviteDialog
+          activity={activity}
+          inviteeNames={activity.invitees.map(i => getInviteeName(i.userId))}
+          onClose={() => setShowShareDialog(false)}
+        />
+      )}
     </div>
   );
 }
