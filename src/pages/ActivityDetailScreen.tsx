@@ -138,9 +138,9 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
 
         {/* Category & Status */}
         <div className="flex items-center gap-2.5 mb-4 relative z-10">
-          {catInfo && (
-            <span className="px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase" style={{ background: `${catInfo.color}15`, color: catInfo.color, border: `1px solid ${catInfo.color}30` }}>
-              {catInfo.emoji} {catInfo.label}
+        {catInfo && (
+            <span className="px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide uppercase bg-primary/10 text-primary border border-primary/20">
+              {catInfo.icon} {catInfo.label}
             </span>
           )}
           <StatusPill status={activity.status === "upcoming" ? "upcoming" : activity.status === "cancelled" ? "cancelled" : "completed"} />
