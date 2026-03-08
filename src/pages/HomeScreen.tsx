@@ -3,6 +3,7 @@ import { Bell, Plus, Sparkles, Search, X, ChevronDown } from "lucide-react";
 import { Activity, User, ACTIVITY_CATEGORIES } from "@/lib/mock-data";
 import SquadAvatar from "@/components/squad/Avatar";
 import ActivityCard from "@/components/squad/ActivityCard";
+import ActivityCardSkeleton from "@/components/squad/ActivityCardSkeleton";
 import GlowOrb from "@/components/squad/GlowOrb";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import PullIndicator from "@/components/squad/PullIndicator";
@@ -13,6 +14,7 @@ interface Props {
   onActivityClick: (a: Activity) => void;
   onCreateClick: () => void;
   onRefresh?: () => Promise<void>;
+  loading?: boolean;
 }
 
 const STATUS_OPTIONS = [
