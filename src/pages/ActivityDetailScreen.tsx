@@ -124,6 +124,17 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
             <ChevronLeft size={20} />
           </button>
           <div className="flex gap-2">
+            <button
+              onClick={() => {
+                const joinUrl = `${window.location.origin}/join/${activity.id}`;
+                navigator.clipboard.writeText(joinUrl).then(() => {
+                  toast.success("Invite link copied to clipboard!");
+                });
+              }}
+              className="w-11 h-11 rounded-2xl bg-background/60 backdrop-blur-xl border border-border flex items-center justify-center text-foreground active:scale-95 transition-transform"
+            >
+              <Share2 size={16} />
+            </button>
             {isCreator && activity.status === "upcoming" && (
               <>
                 <button onClick={() => setShowEdit(true)} className="w-11 h-11 rounded-2xl bg-background/60 backdrop-blur-xl border border-border flex items-center justify-center text-foreground active:scale-95 transition-transform">
