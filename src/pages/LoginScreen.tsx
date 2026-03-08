@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Phone } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import GlowOrb from "@/components/squad/GlowOrb";
 import { checkPhone, registerPhone, verifySetup, loginWithTOTP } from "@/lib/auth-api";
 import { toast } from "sonner";
