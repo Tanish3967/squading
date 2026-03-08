@@ -7,9 +7,10 @@ interface Props {
   currentUser: User;
   activities: Activity[];
   onLogout: () => void;
+  onContactsClick: () => void;
 }
 
-export default function ProfileScreen({ currentUser, activities, onLogout }: Props) {
+export default function ProfileScreen({ currentUser, activities, onLogout, onContactsClick }: Props) {
   const myCreated = activities.filter(a => a.creatorId === currentUser.id);
   const myAttended = activities.filter(a => a.invitees.some(i => i.userId === currentUser.id && i.attended));
   const totalPaid = activities.reduce((sum, a) => {
@@ -53,15 +54,16 @@ export default function ProfileScreen({ currentUser, activities, onLogout }: Pro
       <div className="px-6 flex flex-col gap-2.5">
         <p className="text-xs text-squad-text3 mb-1">ACCOUNT</p>
         {[
-          ["🔔", "Notification preferences"],
-          ["💳", "Payment methods"],
-          ["🔐", "Privacy & security"],
-          ["📋", "Transaction history"],
-          ["❓", "Help & support"],
-        ].map(([icon, label]) => (
-          <div key={label} className="flex items-center gap-3.5 p-3.5 px-4 bg-card border border-border rounded-[14px] cursor-pointer">
-            <span className="text-lg">{icon}</span>
-            <span className="text-sm flex-1">{label}</span>
+          ["📱", "My Contacts", onContactsClick],
+          ["🔔", "Notification preferences", null],
+          ["💳", "Payment methods", null],
+          ["🔐", "Privacy & security", null],
+          ["📋", "Transaction history", null],
+          ["❓", "Help & support", null],
+        ].map(([icon, label, action]) => (
+          <div key={label as string} onClick={action as (() => void) | undefined} className="flex items-center gap-3.5 p-3.5 px-4 bg-card border border-border rounded-[14px] cursor-pointer">
+            <span className="text-lg">{icon as string}</span>
+            <span className="text-sm flex-1">{label as string}</span>
             <ChevronRight size={16} className="text-squad-text3" />
           </div>
         ))}

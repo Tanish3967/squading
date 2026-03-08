@@ -6,6 +6,7 @@ import CreateActivityScreen from "./pages/CreateActivityScreen";
 import ActivityDetailScreen from "./pages/ActivityDetailScreen";
 import NotificationsScreen from "./pages/NotificationsScreen";
 import ProfileScreen from "./pages/ProfileScreen";
+import ContactsScreen from "./pages/ContactsScreen";
 import BottomNav from "./components/squad/BottomNav";
 import { AuthProvider, useAuth, Profile } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -215,6 +216,9 @@ function AppContent() {
   ).length;
 
   const renderScreen = () => {
+    if (screen === "contacts") {
+      return <ContactsScreen onBack={() => { setScreen("profile"); setActiveTab("profile"); }} />;
+    }
     if (screen === "create") {
       return (
         <CreateActivityScreen
@@ -238,7 +242,7 @@ function AppContent() {
       return <NotificationsScreen currentUser={currentUser} activities={activities} onActivityClick={handleActivityClick} />;
     }
     if (activeTab === "profile") {
-      return <ProfileScreen currentUser={currentUser} activities={activities} onLogout={handleLogout} />;
+      return <ProfileScreen currentUser={currentUser} activities={activities} onLogout={handleLogout} onContactsClick={() => setScreen("contacts")} />;
     }
     return (
       <HomeScreen
@@ -255,7 +259,7 @@ function AppContent() {
       <div className="grain-overlay" />
       <div className="max-w-[430px] mx-auto min-h-screen bg-background relative overflow-hidden">
         {renderScreen()}
-        {screen !== "create" && screen !== "detail" && (
+        {screen !== "create" && screen !== "detail" && screen !== "contacts" && (
           <BottomNav
             activeTab={activeTab}
             pendingCount={pendingCount}
