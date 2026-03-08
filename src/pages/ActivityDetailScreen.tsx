@@ -67,7 +67,22 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
   const joinedInvitees = activity.invitees.filter(i => i.status === "accepted");
   const myInvite = activity.invitees.find(i => i.userId === currentUser.id);
 
-  const handleAccept = async () => {
+  const handleRemoveInvitee = async (userId: string) => {
+    await supabase
+      .from("invitees")
+      .delete()
+      .eq("activity_id", activity.id)
+      .eq("user_id", userId);
+
+    onUpdateActivity({
+      ...activity,
+      invitees: activity.invitees.filter(i => i.userId !== userId),
+    });
+    setRemovingUserId(null);
+    toast.success("Member removed from activity");
+  };
+
+
     // If user has an existing invitee record, update it; otherwise insert one
     const { data: existing } = await supabase
       .from("invitees")
