@@ -610,8 +610,8 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
           </div>
         )}
 
-        {/* Activity Chat */}
-        {activity.status !== "cancelled" && (isCreator || myInvite) && (
+        {/* Activity Chat — visible to creator and anyone who has an invitee record (including via join link) */}
+        {activity.status !== "cancelled" && (
           <ActivityComments
             activityId={activity.id}
             currentUserId={currentUser.id}
