@@ -3,15 +3,18 @@ import { Activity, User } from "@/lib/mock-data";
 import SquadAvatar from "@/components/squad/Avatar";
 import ActivityCard from "@/components/squad/ActivityCard";
 import GlowOrb from "@/components/squad/GlowOrb";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import PullIndicator from "@/components/squad/PullIndicator";
 
 interface Props {
   currentUser: User;
   activities: Activity[];
   onActivityClick: (a: Activity) => void;
   onCreateClick: () => void;
+  onRefresh?: () => Promise<void>;
 }
 
-export default function HomeScreen({ currentUser, activities, onActivityClick, onCreateClick }: Props) {
+export default function HomeScreen({ currentUser, activities, onActivityClick, onCreateClick, onRefresh }: Props) {
   const myInvites = activities.filter(a =>
     a.invitees.some(i => i.userId === currentUser.id && i.status === "pending")
   );
