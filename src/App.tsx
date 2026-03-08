@@ -206,6 +206,10 @@ function AppContent() {
     setActivities((prev) => [appActivity, ...prev]);
     setScreen("home");
     setActiveTab("home");
+
+    // Show share dialog with invitee names
+    const inviteeNames: string[] = (newActivity.invitees || []).map((inv: any) => inv.name || "Contact");
+    setShareActivity({ activity: appActivity, inviteeNames });
   };
 
   const handleTabChange = (tab: string) => {
