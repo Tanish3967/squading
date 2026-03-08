@@ -15,7 +15,7 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
   const [showPayment, setShowPayment] = useState(false);
   const [paymentProcessing, setPaymentProcessing] = useState(false);
 
-  const creator = MOCK_USERS.find(u => u.id === activity.creatorId)!;
+  const creator = MOCK_USERS.find(u => u.id === activity.creatorId) || currentUser;
   const isCreator = activity.creatorId === currentUser.id;
   const catInfo = ACTIVITY_CATEGORIES.find(c => c.id === activity.category);
   const joinedInvitees = activity.invitees.filter(i => i.status === "accepted");
