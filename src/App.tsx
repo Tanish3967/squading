@@ -64,6 +64,7 @@ function AppContent() {
   const [activities, setActivities] = useState<AppActivity[]>([]);
   const [selectedActivity, setSelectedActivity] = useState<AppActivity | null>(null);
   const [loadingActivities, setLoadingActivities] = useState(true);
+  const [shareActivity, setShareActivity] = useState<{ activity: AppActivity; inviteeNames: string[] } | null>(null);
 
   const currentUser = profile ? profileToAppUser(profile) : null;
 
