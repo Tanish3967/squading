@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ChevronLeft, Calendar, Clock, MapPin, Users, X, Check, Pencil, Trash2, Ban, Share2, CheckCheck } from "lucide-react";
+import { ChevronLeft, Calendar, Clock, MapPin, Users, X, Check, Pencil, Trash2, Ban, Share2, CheckCheck, BellRing, UserPlus } from "lucide-react";
 import { toast } from "sonner";
 import { Activity, User, MOCK_USERS, ACTIVITY_CATEGORIES } from "@/lib/mock-data";
 import SquadAvatar from "@/components/squad/Avatar";
@@ -7,6 +7,8 @@ import StatusPill from "@/components/squad/StatusPill";
 import GlowOrb from "@/components/squad/GlowOrb";
 import ActivityEditForm from "@/components/squad/ActivityEditForm";
 import PaymentScreen from "@/components/squad/PaymentScreen";
+import ActivityComments from "@/components/squad/ActivityComments";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Props {
   activity: Activity;
@@ -88,9 +90,24 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
     setShowEdit(false);
   };
 
-  const handleCancel = () => {
+  const handleCancel = async () => {
+    // Mark activity as cancelled
     onUpdateActivity({ ...activity, status: "cancelled" });
     setShowCancelConfirm(false);
+
+    // Create refund notifications for all paid invitees
+    const paidInvitees = activity.invitees.filter(i => i.paid);
+    if (paidInvitees.length > 0) {
+      const notifications = paidInvitees.map(inv => ({
+        user_id: inv.userId,
+        activity_id: activity.id,
+        type: "refund",
+        title: "Activity Cancelled — Refund Incoming",
+        body: `"${activity.title}" was cancelled by the host. Your ₹${activity.deposit} deposit will be refunded.`,
+      }));
+      await supabase.from("notifications").insert(notifications);
+    }
+    toast.success("Activity cancelled. Paid invitees will be notified about refunds.");
   };
 
   const handleDelete = () => {
@@ -310,16 +327,36 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
                       {invitee.attended && <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-medium bg-[hsl(var(--squad-green)/0.1)] text-[hsl(var(--squad-green))] border border-[hsl(var(--squad-green)/0.2)]">✓ Attended</span>}
                     </div>
                   </div>
-                  {isCreator && invitee.status === "accepted" && invitee.paid && (
-                    <button onClick={() => handleMarkAttendance(invitee.userId)}
-                      className={`px-3 py-2 rounded-xl text-[13px] font-medium transition-all ${
-                        invitee.attended
-                          ? "bg-transparent text-foreground border border-border"
-                          : "bg-[hsl(var(--squad-green))] text-primary-foreground shadow-green"
-                      }`}>
-                      {invitee.attended ? "Undo" : "Mark ✓"}
-                    </button>
-                  )}
+                  <div className="flex gap-1.5">
+                    {/* Nudge button for creator on pending invitees */}
+                    {isCreator && invitee.status === "pending" && (
+                      <button
+                        onClick={async () => {
+                          await supabase.from("notifications").insert({
+                            user_id: invitee.userId,
+                            activity_id: activity.id,
+                            type: "reminder",
+                            title: "Reminder: You have a pending invite!",
+                            body: `${currentUser.name} is waiting for your response to "${activity.title}". Tap to respond.`,
+                          });
+                          toast.success(`Reminder sent to ${user.name}!`);
+                        }}
+                        className="px-2.5 py-2 rounded-xl text-[12px] font-medium bg-primary/10 text-primary border border-primary/20 active:scale-95 transition-transform"
+                      >
+                        <BellRing size={14} />
+                      </button>
+                    )}
+                    {isCreator && invitee.status === "accepted" && invitee.paid && (
+                      <button onClick={() => handleMarkAttendance(invitee.userId)}
+                        className={`px-3 py-2 rounded-xl text-[13px] font-medium transition-all ${
+                          invitee.attended
+                            ? "bg-transparent text-foreground border border-border"
+                            : "bg-[hsl(var(--squad-green))] text-primary-foreground shadow-green"
+                        }`}>
+                        {invitee.attended ? "Undo" : "Mark ✓"}
+                      </button>
+                    )}
+                  </div>
                 </div>
               );
             })}
@@ -383,6 +420,40 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
               </div>
             )}
           </div>
+        )}
+
+        {/* Waitlist — show when activity is full and user is not already in */}
+        {activity.status === "upcoming" && joinedInvitees.length >= activity.maxPeople && !isCreator && !myInvite && (
+          <div className="p-5 bg-card border border-border rounded-2xl">
+            <p className="text-sm font-bold mb-1">Activity is full 😔</p>
+            <p className="text-[13px] text-muted-foreground mb-3">Join the waitlist — you'll be notified if a spot opens up.</p>
+            <button
+              onClick={async () => {
+                const { error } = await supabase.from("waitlist").insert({
+                  activity_id: activity.id,
+                  user_id: currentUser.id,
+                });
+                if (error) {
+                  if (error.code === "23505") toast("You're already on the waitlist!");
+                  else toast.error(error.message);
+                } else {
+                  toast.success("You've been added to the waitlist!");
+                }
+              }}
+              className="flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-medium w-full active:scale-[0.97] transition-transform"
+            >
+              <UserPlus size={16} /> Join Waitlist
+            </button>
+          </div>
+        )}
+
+        {/* Activity Chat */}
+        {activity.status !== "cancelled" && (isCreator || myInvite) && (
+          <ActivityComments
+            activityId={activity.id}
+            currentUserId={currentUser.id}
+            currentUserName={currentUser.name}
+          />
         )}
       </div>
     </div>
