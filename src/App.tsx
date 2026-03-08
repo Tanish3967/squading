@@ -84,59 +84,56 @@ function AppContent() {
   const currentUser = profile ? profileToAppUser(profile) : null;
 
   // Fetch activities from database
+  const fetchActivities = async () => {
+    setLoadingActivities(true);
+    const { data: acts } = await supabase
+      .from("activities")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (acts) {
+      const actIds = acts.map((a) => a.id);
+      const { data: invitees } = actIds.length > 0
+        ? await supabase.from("invitees").select("*").in("activity_id", actIds)
+        : { data: [] };
+
+      const mapped: AppActivity[] = acts.map((a) => ({
+        id: a.id,
+        title: a.title,
+        category: a.category,
+        date: a.date,
+        time: a.time,
+        location: a.location,
+        deposit: a.deposit,
+        maxPeople: a.max_people,
+        description: a.description || "",
+        creatorId: a.creator_id,
+        invitees: (invitees || [])
+          .filter((i) => i.activity_id === a.id)
+          .map((i) => ({
+            userId: i.user_id,
+            status: i.status as "accepted" | "declined" | "pending",
+            paid: i.paid,
+            attended: i.attended,
+          })),
+        status: a.status as "upcoming" | "completed" | "cancelled",
+      }));
+      setActivities(mapped);
+
+      if (pendingJoinActivityId) {
+        const match = mapped.find((a) => a.id === pendingJoinActivityId);
+        if (match) {
+          setSelectedActivity(match);
+          setScreen("detail");
+        }
+        setPendingJoinActivityId(null);
+      }
+    }
+    setLoadingActivities(false);
+  };
+
   useEffect(() => {
     if (!profile) return;
-    
-    async function fetchActivities() {
-      setLoadingActivities(true);
-      const { data: acts } = await supabase
-        .from("activities")
-        .select("*")
-        .order("created_at", { ascending: false });
-
-      if (acts) {
-        // Fetch invitees for all activities
-        const actIds = acts.map((a) => a.id);
-        const { data: invitees } = actIds.length > 0
-          ? await supabase.from("invitees").select("*").in("activity_id", actIds)
-          : { data: [] };
-
-        const mapped: AppActivity[] = acts.map((a) => ({
-          id: a.id,
-          title: a.title,
-          category: a.category,
-          date: a.date,
-          time: a.time,
-          location: a.location,
-          deposit: a.deposit,
-          maxPeople: a.max_people,
-          description: a.description || "",
-          creatorId: a.creator_id,
-          invitees: (invitees || [])
-            .filter((i) => i.activity_id === a.id)
-            .map((i) => ({
-              userId: i.user_id,
-              status: i.status as "accepted" | "declined" | "pending",
-              paid: i.paid,
-              attended: i.attended,
-            })),
-          status: a.status as "upcoming" | "completed" | "cancelled",
-        }));
-        setActivities(mapped);
-
-        // Auto-open activity from join link
-        if (pendingJoinActivityId) {
-          const match = mapped.find((a) => a.id === pendingJoinActivityId);
-          if (match) {
-            setSelectedActivity(match);
-            setScreen("detail");
-          }
-          setPendingJoinActivityId(null);
-        }
-      }
-      setLoadingActivities(false);
-    }
-
     fetchActivities();
   }, [profile]);
 
@@ -293,7 +290,7 @@ function AppContent() {
       );
     }
     if (activeTab === "activity") {
-      return <ActivityStatsScreen currentUserId={currentUser.id} activities={activities} />;
+      return <ActivityStatsScreen currentUserId={currentUser.id} activities={activities} onRefresh={fetchActivities} />;
     }
     if (activeTab === "notifications") {
       return <NotificationsScreen currentUser={currentUser} activities={activities} onActivityClick={handleActivityClick} />;
@@ -307,6 +304,7 @@ function AppContent() {
         activities={activities}
         onActivityClick={handleActivityClick}
         onCreateClick={() => { setScreen("create"); setActiveTab("create"); }}
+        onRefresh={fetchActivities}
       />
     );
   };

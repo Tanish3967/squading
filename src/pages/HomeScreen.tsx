@@ -3,15 +3,18 @@ import { Activity, User } from "@/lib/mock-data";
 import SquadAvatar from "@/components/squad/Avatar";
 import ActivityCard from "@/components/squad/ActivityCard";
 import GlowOrb from "@/components/squad/GlowOrb";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import PullIndicator from "@/components/squad/PullIndicator";
 
 interface Props {
   currentUser: User;
   activities: Activity[];
   onActivityClick: (a: Activity) => void;
   onCreateClick: () => void;
+  onRefresh?: () => Promise<void>;
 }
 
-export default function HomeScreen({ currentUser, activities, onActivityClick, onCreateClick }: Props) {
+export default function HomeScreen({ currentUser, activities, onActivityClick, onCreateClick, onRefresh }: Props) {
   const myInvites = activities.filter(a =>
     a.invitees.some(i => i.userId === currentUser.id && i.status === "pending")
   );
@@ -26,8 +29,17 @@ export default function HomeScreen({ currentUser, activities, onActivityClick, o
     return inv ? sum + a.deposit : sum;
   }, 0);
 
+  const { containerRef, pullDistance, refreshing, handlers } = usePullToRefresh({
+    onRefresh: onRefresh || (async () => {}),
+  });
+
   return (
-    <div className="min-h-screen flex flex-col pb-20 animate-fade-up">
+    <div
+      ref={containerRef}
+      {...handlers}
+      className="min-h-screen flex flex-col pb-20 animate-fade-up overflow-y-auto"
+    >
+      <PullIndicator pullDistance={pullDistance} refreshing={refreshing} />
       {/* Header */}
       <div className="pt-[52px] px-6 pb-6 relative">
         <GlowOrb color="hsl(var(--primary))" size={250} top="-60px" right="-80px" />

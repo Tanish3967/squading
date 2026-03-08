@@ -1,5 +1,7 @@
 import { TrendingUp, Target, Wallet, Trophy, Calendar, CheckCircle2, XCircle, Clock } from "lucide-react";
 import GlowOrb from "@/components/squad/GlowOrb";
+import { usePullToRefresh } from "@/hooks/usePullToRefresh";
+import PullIndicator from "@/components/squad/PullIndicator";
 
 interface ActivityData {
   id: string;
@@ -20,9 +22,10 @@ interface ActivityData {
 interface Props {
   currentUserId: string;
   activities: ActivityData[];
+  onRefresh?: () => Promise<void>;
 }
 
-export default function ActivityStatsScreen({ currentUserId, activities }: Props) {
+export default function ActivityStatsScreen({ currentUserId, activities, onRefresh }: Props) {
   // Compute stats
   const created = activities.filter(a => a.creatorId === currentUserId);
   const invitedTo = activities.filter(a => a.invitees.some(i => i.userId === currentUserId));
@@ -58,8 +61,17 @@ export default function ActivityStatsScreen({ currentUserId, activities }: Props
   }
   const maxMonth = Math.max(...months.map(m => m.count), 1);
 
+  const { containerRef, pullDistance, refreshing, handlers } = usePullToRefresh({
+    onRefresh: onRefresh || (async () => {}),
+  });
+
   return (
-    <div className="min-h-screen flex flex-col pb-20 animate-fade-up">
+    <div
+      ref={containerRef}
+      {...handlers}
+      className="min-h-screen flex flex-col pb-20 animate-fade-up overflow-y-auto"
+    >
+      <PullIndicator pullDistance={pullDistance} refreshing={refreshing} />
       {/* Header */}
       <div className="pt-[52px] px-6 pb-6 relative">
         <GlowOrb color="hsl(var(--squad-green))" size={220} top="-50px" right="-60px" />
