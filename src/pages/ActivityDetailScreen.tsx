@@ -142,19 +142,28 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
 
   const handlePayment = () => {
     setPaymentProcessing(true);
+    setPaymentFailed(false);
     setTimeout(async () => {
-      await supabase
-        .from("invitees")
-        .update({ paid: true })
-        .eq("activity_id", activity.id)
-        .eq("user_id", currentUser.id);
+      // Simulate occasional failure (in production, this would be real PhonePe response)
+      const success = Math.random() > 0.15; // 85% success rate simulation
+      if (success) {
+        await supabase
+          .from("invitees")
+          .update({ paid: true })
+          .eq("activity_id", activity.id)
+          .eq("user_id", currentUser.id);
 
-      onUpdateActivity({
-        ...activity,
-        invitees: activity.invitees.map(i => i.userId === currentUser.id ? { ...i, paid: true } : i),
-      });
-      setPaymentProcessing(false);
-      setShowPayment(false);
+        onUpdateActivity({
+          ...activity,
+          invitees: activity.invitees.map(i => i.userId === currentUser.id ? { ...i, paid: true } : i),
+        });
+        setPaymentProcessing(false);
+        setShowPayment(false);
+      } else {
+        setPaymentProcessing(false);
+        setPaymentFailed(true);
+        toast.error("Payment failed. Please try again.");
+      }
     }, 2000);
   };
 
