@@ -339,14 +339,29 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
             {myInvite.status === "pending" && (
               <div className="flex flex-col gap-3">
                 <p className="text-[13px] text-muted-foreground text-center">You've been invited! Will you join?</p>
-                <div className="flex gap-2.5">
-                  <button onClick={handleDecline} className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl bg-transparent text-destructive border border-destructive/30 font-medium active:bg-destructive/10 transition-all">
-                    <X size={16} /> Decline
-                  </button>
-                  <button onClick={handleAccept} className="flex-[2] flex items-center justify-center gap-2 py-3.5 rounded-xl bg-primary text-primary-foreground font-medium shadow-saffron active:scale-[0.97] transition-all">
-                    <Check size={16} /> Join & Pay ₹{activity.deposit}
-                  </button>
-                </div>
+
+                {/* Decline confirmation */}
+                {showDeclineConfirm && (
+                  <div className="p-5 bg-card border border-destructive/20 rounded-2xl animate-fade-up">
+                    <p className="text-sm font-bold mb-1">Decline this invite?</p>
+                    <p className="text-[13px] text-muted-foreground mb-4">You won't be able to join this activity afterwards.</p>
+                    <div className="flex gap-2">
+                      <button onClick={() => setShowDeclineConfirm(false)} className="flex-1 py-2.5 rounded-xl bg-secondary border border-border text-foreground text-sm font-medium">Go back</button>
+                      <button onClick={handleDecline} className="flex-1 py-2.5 rounded-xl bg-destructive text-primary-foreground text-sm font-medium">Yes, decline</button>
+                    </div>
+                  </div>
+                )}
+
+                {!showDeclineConfirm && (
+                  <div className="flex gap-2.5">
+                    <button onClick={() => setShowDeclineConfirm(true)} className="flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl bg-transparent text-destructive border border-destructive/30 font-medium active:bg-destructive/10 transition-all">
+                      <X size={16} /> Decline
+                    </button>
+                    <button onClick={handleAccept} className="flex-[2] flex items-center justify-center gap-2 py-3.5 rounded-xl bg-primary text-primary-foreground font-medium shadow-saffron active:scale-[0.97] transition-all">
+                      <Check size={16} /> Join & Pay ₹{activity.deposit}
+                    </button>
+                  </div>
+                )}
               </div>
             )}
             {myInvite.status === "accepted" && !myInvite.paid && (
