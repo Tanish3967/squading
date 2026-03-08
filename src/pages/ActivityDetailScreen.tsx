@@ -172,6 +172,7 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
       ...activity,
       invitees: activity.invitees.map(i => i.userId === userId ? { ...i, attended: !i.attended } : i),
     });
+    setConfirmAttendanceUserId(null);
   };
 
   const handleSaveEdit = () => {
