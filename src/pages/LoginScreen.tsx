@@ -18,6 +18,7 @@ export default function LoginScreen() {
   const [userId, setUserId] = useState("");
   const [isNewUser, setIsNewUser] = useState(false);
   const [displayName, setDisplayName] = useState("");
+  const [shaking, setShaking] = useState(false);
   const codeRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const handlePhoneNext = async () => {
@@ -73,11 +74,26 @@ export default function LoginScreen() {
         // New user — go to name setup
         setStep("name-setup");
       } else {
-        await loginWithTOTP(phone, codeStr);
+        const result = await loginWithTOTP(phone, codeStr);
+        // Check if returning user has a name set
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: prof } = await supabase
+            .from("profiles")
+            .select("name")
+            .eq("id", user.id)
+            .single();
+          if (!prof?.name) {
+            setStep("name-setup");
+            return;
+          }
+        }
         toast.success("Welcome back!");
       }
     } catch (err: any) {
       toast.error(err.message || "Invalid code");
+      setShaking(true);
+      setTimeout(() => setShaking(false), 500);
       setCode(["", "", "", "", "", ""]);
       codeRefs.current[0]?.focus();
     } finally {
@@ -121,7 +137,7 @@ export default function LoginScreen() {
   };
 
   const CodeInput = () => (
-    <div className="flex items-center gap-1.5 justify-center" onPaste={handlePaste}>
+    <div className={`flex items-center gap-1.5 justify-center ${shaking ? "animate-shake" : ""}`} onPaste={handlePaste}>
       {code.map((digit, i) => (
         <React.Fragment key={i}>
           {i === 3 && <div className="otp-separator" />}
