@@ -8,9 +8,10 @@ interface Props {
   activities: Activity[];
   onLogout: () => void;
   onContactsClick: () => void;
+  onEditProfileClick: () => void;
 }
 
-export default function ProfileScreen({ currentUser, activities, onLogout, onContactsClick }: Props) {
+export default function ProfileScreen({ currentUser, activities, onLogout, onContactsClick, onEditProfileClick }: Props) {
   const myCreated = activities.filter(a => a.creatorId === currentUser.id);
   const myAttended = activities.filter(a => a.invitees.some(i => i.userId === currentUser.id && i.attended));
   const totalPaid = activities.reduce((sum, a) => {
@@ -26,12 +27,12 @@ export default function ProfileScreen({ currentUser, activities, onLogout, onCon
     <div className="min-h-screen flex flex-col pb-20 animate-fade-up">
       <div className="pt-[52px] px-6 pb-7 relative">
         <GlowOrb color="#845EC2" size={200} top="-40px" right="-60px" />
-        <div className="flex gap-4 items-center mb-5 relative z-10">
+        <div className="flex gap-4 items-center mb-5 relative z-10 cursor-pointer" onClick={onEditProfileClick}>
           <SquadAvatar name={currentUser.name} size="lg" />
           <div>
             <p className="font-display text-xl font-extrabold">{currentUser.name}</p>
             <p className="text-[13px] text-squad-text2">+91 {currentUser.phone}</p>
-            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-squad-saffron/10 text-squad-saffron border border-squad-saffron/20 mt-1.5">Squad Member</span>
+            <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-squad-saffron/10 text-squad-saffron border border-squad-saffron/20 mt-1.5">Tap to edit profile</span>
           </div>
         </div>
 

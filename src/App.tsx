@@ -8,6 +8,7 @@ import NotificationsScreen from "./pages/NotificationsScreen";
 import ProfileScreen from "./pages/ProfileScreen";
 import ContactsScreen from "./pages/ContactsScreen";
 import ActivityStatsScreen from "./pages/ActivityStatsScreen";
+import EditProfileScreen from "./pages/EditProfileScreen";
 import BottomNav from "./components/squad/BottomNav";
 import ShareInviteDialog from "./components/squad/ShareInviteDialog";
 import InstallPrompt from "./components/squad/InstallPrompt";
@@ -289,6 +290,9 @@ function AppContent() {
     if (screen === "contacts") {
       return <ContactsScreen onBack={() => { setScreen("profile"); setActiveTab("profile"); }} />;
     }
+    if (screen === "edit-profile") {
+      return <EditProfileScreen currentUser={currentUser} onBack={() => { setScreen("profile"); setActiveTab("profile"); }} />;
+    }
     if (screen === "create") {
       return (
         <CreateActivityScreen
@@ -316,7 +320,7 @@ function AppContent() {
       return <NotificationsScreen currentUser={currentUser} activities={activities} onActivityClick={handleActivityClick} />;
     }
     if (activeTab === "profile") {
-      return <ProfileScreen currentUser={currentUser} activities={activities} onLogout={handleLogout} onContactsClick={() => setScreen("contacts")} />;
+      return <ProfileScreen currentUser={currentUser} activities={activities} onLogout={handleLogout} onContactsClick={() => setScreen("contacts")} onEditProfileClick={() => setScreen("edit-profile")} />;
     }
     return (
       <HomeScreen
@@ -335,7 +339,7 @@ function AppContent() {
       <div className="grain-overlay" />
       <div className="max-w-[430px] mx-auto min-h-screen bg-background relative overflow-hidden">
         {renderScreen()}
-        {screen !== "create" && screen !== "detail" && screen !== "contacts" && (
+        {screen !== "create" && screen !== "detail" && screen !== "contacts" && screen !== "edit-profile" && (
           <BottomNav
             activeTab={activeTab}
             pendingCount={pendingCount}
