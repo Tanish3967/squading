@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Phone, User } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import GlowOrb from "@/components/squad/GlowOrb";
@@ -109,19 +109,35 @@ export default function LoginScreen() {
     }
   }, [code]);
 
+  const handlePaste = (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    if (!pasted) return;
+    const next = [...code];
+    for (let i = 0; i < 6; i++) next[i] = pasted[i] || "";
+    setCode(next);
+    const focusIdx = Math.min(pasted.length, 5);
+    codeRefs.current[focusIdx]?.focus();
+  };
+
   const CodeInput = () => (
-    <div className="flex gap-2.5 justify-center">
+    <div className="flex items-center gap-1.5 justify-center" onPaste={handlePaste}>
       {code.map((digit, i) => (
-        <input
-          key={i}
-          ref={el => { codeRefs.current[i] = el; }}
-          className="otp-input"
-          type="tel"
-          maxLength={1}
-          value={digit}
-          onChange={e => handleCodeChange(i, e.target.value)}
-          onKeyDown={e => handleCodeKey(i, e)}
-        />
+        <React.Fragment key={i}>
+          {i === 3 && <div className="otp-separator" />}
+          <input
+            ref={el => { codeRefs.current[i] = el; }}
+            className={`otp-input ${digit ? "filled" : ""}`}
+            type="tel"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={1}
+            value={digit}
+            onChange={e => handleCodeChange(i, e.target.value)}
+            onKeyDown={e => handleCodeKey(i, e)}
+            onFocus={e => e.target.select()}
+          />
+        </React.Fragment>
       ))}
     </div>
   );
