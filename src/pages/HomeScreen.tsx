@@ -7,6 +7,7 @@ import ActivityCardSkeleton from "@/components/squad/ActivityCardSkeleton";
 import GlowOrb from "@/components/squad/GlowOrb";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import PullIndicator from "@/components/squad/PullIndicator";
+import PushPrompt from "@/components/squad/PushPrompt";
 
 interface Props {
   currentUser: User;
