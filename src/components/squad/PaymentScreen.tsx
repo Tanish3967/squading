@@ -9,7 +9,7 @@ interface Props {
   onBack: () => void;
 }
 
-export default function PaymentScreen({ deposit, activityTitle, processing, onPay, onBack }: Props) {
+export default function PaymentScreen({ deposit, activityTitle, processing, failed, onPay, onBack }: Props) {
   return (
     <div className="min-h-screen flex flex-col pb-20 animate-fade-up">
       <div className="flex items-center justify-between pt-14 px-6 pb-5">
