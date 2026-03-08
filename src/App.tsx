@@ -122,18 +122,18 @@ function AppContent() {
           status: a.status as "upcoming" | "completed" | "cancelled",
         }));
         setActivities(mapped);
+
+        // Auto-open activity from join link
+        if (pendingJoinActivityId) {
+          const match = mapped.find((a) => a.id === pendingJoinActivityId);
+          if (match) {
+            setSelectedActivity(match);
+            setScreen("detail");
+          }
+          setPendingJoinActivityId(null);
+        }
       }
       setLoadingActivities(false);
-
-      // Auto-open activity from join link
-      if (pendingJoinActivityId) {
-        const match = mapped.find((a) => a.id === pendingJoinActivityId);
-        if (match) {
-          setSelectedActivity(match);
-          setScreen("detail");
-        }
-        setPendingJoinActivityId(null);
-      }
     }
 
     fetchActivities();
