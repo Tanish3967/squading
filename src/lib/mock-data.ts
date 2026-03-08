@@ -27,3 +27,11 @@ export interface Activity {
   status: "upcoming" | "completed" | "cancelled";
 }
 
+export const ACTIVITY_CATEGORIES = [
+  { id: "trek", label: "Trek", icon: "⛰️" },
+  { id: "sports", label: "Sports", icon: "🏏" },
+  { id: "party", label: "Party", icon: "🎉" },
+  { id: "food", label: "Food Run", icon: "🍜" },
+  { id: "movie", label: "Movie", icon: "🎬" },
+  { id: "travel", label: "Travel", icon: "✈️" },
+];
