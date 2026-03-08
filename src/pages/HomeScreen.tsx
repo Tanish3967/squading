@@ -3,6 +3,7 @@ import { Bell, Plus, Sparkles, Search, X, ChevronDown } from "lucide-react";
 import { Activity, User, ACTIVITY_CATEGORIES } from "@/lib/mock-data";
 import SquadAvatar from "@/components/squad/Avatar";
 import ActivityCard from "@/components/squad/ActivityCard";
+import ActivityCardSkeleton from "@/components/squad/ActivityCardSkeleton";
 import GlowOrb from "@/components/squad/GlowOrb";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import PullIndicator from "@/components/squad/PullIndicator";
@@ -13,6 +14,7 @@ interface Props {
   onActivityClick: (a: Activity) => void;
   onCreateClick: () => void;
   onRefresh?: () => Promise<void>;
+  loading?: boolean;
 }
 
 const STATUS_OPTIONS = [
@@ -29,7 +31,7 @@ const DATE_OPTIONS = [
   { id: "month", label: "This month" },
 ];
 
-export default function HomeScreen({ currentUser, activities, onActivityClick, onCreateClick, onRefresh }: Props) {
+export default function HomeScreen({ currentUser, activities, onActivityClick, onCreateClick, onRefresh, loading }: Props) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
@@ -272,7 +274,13 @@ export default function HomeScreen({ currentUser, activities, onActivityClick, o
           <span className="text-[12px] text-muted-foreground bg-secondary px-2.5 py-1 rounded-lg">{filteredActivities.length}</span>
         </div>
         <div className="flex flex-col gap-3">
-          {filteredActivities.length === 0 ? (
+          {loading ? (
+            <>
+              <ActivityCardSkeleton />
+              <ActivityCardSkeleton />
+              <ActivityCardSkeleton />
+            </>
+          ) : filteredActivities.length === 0 ? (
             <div className="text-center py-14 rounded-2xl border border-dashed border-border bg-secondary/30">
               <div className="text-[48px] mb-3">{searchQuery || hasActiveFilters ? "🔍" : "🎯"}</div>
               <p className="text-muted-foreground text-sm mb-4">

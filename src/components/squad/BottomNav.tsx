@@ -17,7 +17,7 @@ export default function BottomNav({ activeTab, pendingCount, onTabChange, onCrea
   ];
 
   return (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-[rgba(16,16,20,0.92)] backdrop-blur-[20px] border-t border-border flex items-center justify-around pt-2.5 pb-[18px] z-[100]">
+    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-[rgba(16,16,20,0.92)] backdrop-blur-[20px] border-t border-border flex items-center justify-around pt-2.5 pb-[calc(18px+env(safe-area-inset-bottom))] z-[100]">
       {navItems.map(item => {
         if (item.id === "fab") {
           return (

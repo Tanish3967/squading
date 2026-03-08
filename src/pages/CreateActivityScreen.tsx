@@ -154,13 +154,38 @@ export default function CreateActivityScreen({ currentUser, onBack, onCreate }: 
             </div>
 
             <div className="flex flex-col gap-2">
-              <label className="text-[13px] text-squad-text2 font-medium tracking-wide flex justify-between">
-                <span>Commitment Deposit (₹)</span>
-                <span className="text-squad-saffron font-semibold">₹{form.deposit}</span>
+              <label className="text-[13px] text-squad-text2 font-medium tracking-wide">
+                Commitment Deposit (₹)
               </label>
-              <input type="range" min={99} max={999} step={50} value={form.deposit} onChange={(e) => set("deposit", Number(e.target.value))} className="w-full" />
-              <div className="flex justify-between text-[11px] text-squad-text3">
-                <span>₹99</span><span>₹999</span>
+              <div className="flex flex-wrap gap-2">
+                {[49, 99, 199, 499].map(amt => (
+                  <button
+                    key={amt}
+                    type="button"
+                    onClick={() => set("deposit", amt)}
+                    className={`px-4 py-2.5 rounded-xl text-sm font-semibold border transition-all ${
+                      form.deposit === amt
+                        ? "bg-squad-saffron/10 border-squad-saffron text-squad-saffron"
+                        : "bg-squad-bg3 border-border text-squad-text2"
+                    }`}
+                  >
+                    ₹{amt}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => {
+                    const val = prompt("Enter custom deposit amount (₹)");
+                    if (val && !isNaN(Number(val)) && Number(val) >= 10) set("deposit", Number(val));
+                  }}
+                  className={`px-4 py-2.5 rounded-xl text-sm font-semibold border transition-all ${
+                    ![49, 99, 199, 499].includes(form.deposit)
+                      ? "bg-squad-saffron/10 border-squad-saffron text-squad-saffron"
+                      : "bg-squad-bg3 border-border text-squad-text2"
+                  }`}
+                >
+                  {![49, 99, 199, 499].includes(form.deposit) ? `₹${form.deposit}` : "Custom"}
+                </button>
               </div>
             </div>
 
