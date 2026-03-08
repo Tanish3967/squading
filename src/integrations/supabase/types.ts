@@ -14,7 +14,293 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      activities: {
+        Row: {
+          category: string
+          created_at: string
+          creator_id: string
+          date: string
+          deposit: number
+          description: string | null
+          id: string
+          location: string
+          max_people: number
+          status: string
+          time: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          creator_id: string
+          date: string
+          deposit: number
+          description?: string | null
+          id?: string
+          location: string
+          max_people?: number
+          status?: string
+          time?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          creator_id?: string
+          date?: string
+          deposit?: number
+          description?: string | null
+          id?: string
+          location?: string
+          max_people?: number
+          status?: string
+          time?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "activities_creator_id_fkey"
+            columns: ["creator_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invitees: {
+        Row: {
+          activity_id: string
+          attended: boolean
+          id: string
+          invited_at: string
+          marked_at: string | null
+          paid: boolean
+          responded_at: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          activity_id: string
+          attended?: boolean
+          id?: string
+          invited_at?: string
+          marked_at?: string | null
+          paid?: boolean
+          responded_at?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          activity_id?: string
+          attended?: boolean
+          id?: string
+          invited_at?: string
+          marked_at?: string | null
+          paid?: boolean
+          responded_at?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invitees_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "activities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invitees_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          activity_id: string | null
+          body: string
+          created_at: string
+          id: string
+          is_read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          activity_id?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          activity_id?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "activities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          id: string
+          name: string | null
+          phone: string
+          totp_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          id: string
+          name?: string | null
+          phone: string
+          totp_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          id?: string
+          name?: string | null
+          phone?: string
+          totp_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      totp_secrets: {
+        Row: {
+          created_at: string
+          id: string
+          secret: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          secret: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          secret?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "totp_secrets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      transactions: {
+        Row: {
+          activity_id: string
+          amount: number
+          created_at: string
+          failure_reason: string | null
+          id: string
+          invitee_id: string
+          phonepe_merchant_txn_id: string | null
+          phonepe_order_id: string | null
+          phonepe_payment_id: string | null
+          refund_id: string | null
+          status: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activity_id: string
+          amount: number
+          created_at?: string
+          failure_reason?: string | null
+          id?: string
+          invitee_id: string
+          phonepe_merchant_txn_id?: string | null
+          phonepe_order_id?: string | null
+          phonepe_payment_id?: string | null
+          refund_id?: string | null
+          status?: string
+          type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activity_id?: string
+          amount?: number
+          created_at?: string
+          failure_reason?: string | null
+          id?: string
+          invitee_id?: string
+          phonepe_merchant_txn_id?: string | null
+          phonepe_order_id?: string | null
+          phonepe_payment_id?: string | null
+          refund_id?: string | null
+          status?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_activity_id_fkey"
+            columns: ["activity_id"]
+            isOneToOne: false
+            referencedRelation: "activities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_invitee_id_fkey"
+            columns: ["invitee_id"]
+            isOneToOne: true
+            referencedRelation: "invitees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
