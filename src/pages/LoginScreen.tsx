@@ -79,6 +79,8 @@ export default function LoginScreen() {
       }
     } catch (err: any) {
       toast.error(err.message || "Invalid code");
+      setShaking(true);
+      setTimeout(() => setShaking(false), 500);
       setCode(["", "", "", "", "", ""]);
       codeRefs.current[0]?.focus();
     } finally {
