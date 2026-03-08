@@ -135,11 +135,23 @@ function AppContent() {
     setLoadingActivities(false);
   };
 
+  // Fetch unread notification count
+  const fetchUnreadCount = async () => {
+    if (!profile) return;
+    const { count } = await supabase
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", profile.id)
+      .eq("is_read", false);
+    setUnreadNotifCount(count || 0);
+  };
+
   useEffect(() => {
     if (!profile) return;
     fetchActivities();
+    fetchUnreadCount();
 
-    // Subscribe to realtime changes on activities and invitees
+    // Subscribe to realtime changes on activities, invitees, and notifications
     const channel = supabase
       .channel("realtime-activities")
       .on(
@@ -151,6 +163,11 @@ function AppContent() {
         "postgres_changes",
         { event: "*", schema: "public", table: "invitees" },
         () => fetchActivities()
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "notifications", filter: `user_id=eq.${profile.id}` },
+        () => fetchUnreadCount()
       )
       .subscribe();
 
