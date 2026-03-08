@@ -31,16 +31,6 @@ export default function JoinActivityScreen() {
   useEffect(() => {
     if (!activityId) return;
 
-    supabase.functions
-      .invoke("get-public-activity", {
-        body: null,
-        headers: {},
-        method: "GET",
-      })
-      .then(() => {})
-      .catch(() => {});
-
-    // Use fetch directly since we need query params on a GET
     const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-public-activity?id=${activityId}`;
     fetch(url, {
       headers: {
