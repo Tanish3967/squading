@@ -38,7 +38,7 @@ export default function ActivityComments({ activityId, currentUserId, currentUse
         .rpc("get_public_profiles", { user_ids: userIds });
 
       const nameMap: Record<string, string> = {};
-      profiles?.forEach(p => { nameMap[p.id] = p.name || "Squad Member"; });
+      (profiles as { id: string; name: string | null }[] | null)?.forEach(p => { nameMap[p.id] = p.name || "Squad Member"; });
 
       setComments(data.map(c => ({
         ...c,
