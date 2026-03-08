@@ -1,6 +1,9 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.4";
 import { authenticator } from "npm:otplib@12.0.1";
 
+// Allow ±1 time period (90s total window) to handle clock drift and setup delays
+authenticator.options = { window: 1 };
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
