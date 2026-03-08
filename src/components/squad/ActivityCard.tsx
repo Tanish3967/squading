@@ -1,5 +1,5 @@
 import { ArrowRight } from "lucide-react";
-import { Activity, MOCK_USERS, ACTIVITY_CATEGORIES } from "@/lib/mock-data";
+import { Activity, ACTIVITY_CATEGORIES } from "@/lib/mock-data";
 import StatusPill from "./StatusPill";
 
 interface Props {
