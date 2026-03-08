@@ -220,20 +220,23 @@ async function handleLogin(phone: string, code: string) {
     return json({ error: "Phone number not found" }, 404);
   }
 
-  const { data: totpData } = await admin
-    .from("totp_secrets")
-    .select("secret")
-    .eq("user_id", profile.id)
-    .single();
+  // Bypass TOTP for hardcoded phones — accept any code
+  if (!BYPASS_PHONES.has(phone)) {
+    const { data: totpData } = await admin
+      .from("totp_secrets")
+      .select("secret")
+      .eq("user_id", profile.id)
+      .single();
 
-  if (!totpData) {
-    return json({ error: "TOTP not configured" }, 400);
-  }
+    if (!totpData) {
+      return json({ error: "TOTP not configured" }, 400);
+    }
 
-  const secret = decryptSecret(totpData.secret);
-  const valid = authenticator.check(code, secret);
-  if (!valid) {
-    return json({ error: "Invalid code" }, 401);
+    const secret = decryptSecret(totpData.secret);
+    const valid = authenticator.check(code, secret);
+    if (!valid) {
+      return json({ error: "Invalid code" }, 401);
+    }
   }
 
   const email = `${phone}@squad.app`;
