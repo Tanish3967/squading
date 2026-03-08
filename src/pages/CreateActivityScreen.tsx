@@ -157,9 +157,9 @@ export default function CreateActivityScreen({ currentUser, onBack, onCreate }: 
                 <span>Commitment Deposit (₹)</span>
                 <span className="text-squad-saffron font-semibold">₹{form.deposit}</span>
               </label>
-              <input type="range" min={49} max={999} step={50} value={form.deposit} onChange={(e) => set("deposit", Number(e.target.value))} className="w-full" />
+              <input type="range" min={99} max={999} step={50} value={form.deposit} onChange={(e) => set("deposit", Number(e.target.value))} className="w-full" />
               <div className="flex justify-between text-[11px] text-squad-text3">
-                <span>₹49</span><span>₹999</span>
+                <span>₹99</span><span>₹999</span>
               </div>
             </div>
 
