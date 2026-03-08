@@ -250,8 +250,37 @@ function AppContent() {
       return;
     }
 
-    // Insert invitees (skip FK-violating contact IDs for now — contacts aren't profiles)
-    // We store invitee records only when the contact has a matching profile
+    // Look up contacts by phone to find matching registered profiles, then insert invitees
+    const contactInvitees: { name: string; phone?: string }[] = newActivity.invitees || [];
+    const phones = contactInvitees.map((c: any) => c.phone).filter(Boolean);
+    let insertedInvitees: AppInvitee[] = [];
+
+    if (phones.length > 0) {
+      const { data: matchedProfiles } = await supabase
+        .from("profiles")
+        .select("id, phone")
+        .in("phone", phones);
+
+      if (matchedProfiles && matchedProfiles.length > 0) {
+        const inviteeRows = matchedProfiles
+          .filter((p) => p.id !== currentUser.id) // Don't invite yourself
+          .map((p) => ({
+            activity_id: created.id,
+            user_id: p.id,
+            status: "pending",
+          }));
+
+        if (inviteeRows.length > 0) {
+          await supabase.from("invitees").insert(inviteeRows);
+          insertedInvitees = inviteeRows.map((r) => ({
+            userId: r.user_id,
+            status: "pending" as const,
+            paid: false,
+            attended: false,
+          }));
+        }
+      }
+    }
 
     // Add to local state
     const appActivity: AppActivity = {
@@ -265,7 +294,7 @@ function AppContent() {
       maxPeople: created.max_people,
       description: created.description || "",
       creatorId: created.creator_id,
-      invitees: [],
+      invitees: insertedInvitees,
       status: "upcoming",
     };
     setActivities((prev) => [appActivity, ...prev]);
@@ -273,7 +302,7 @@ function AppContent() {
     setActiveTab("home");
 
     // Show share dialog with invitee names
-    const inviteeNames: string[] = (newActivity.invitees || []).map((inv: any) => inv.name || "Contact");
+    const inviteeNames: string[] = contactInvitees.map((inv: any) => inv.name || "Contact");
     setShareActivity({ activity: appActivity, inviteeNames });
   };
 
