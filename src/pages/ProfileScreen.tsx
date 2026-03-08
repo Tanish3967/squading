@@ -7,6 +7,7 @@ interface Props {
   currentUser: User;
   activities: Activity[];
   onLogout: () => void;
+  onContactsClick: () => void;
 }
 
 export default function ProfileScreen({ currentUser, activities, onLogout }: Props) {
