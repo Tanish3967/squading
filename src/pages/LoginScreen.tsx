@@ -74,7 +74,20 @@ export default function LoginScreen() {
         // New user — go to name setup
         setStep("name-setup");
       } else {
-        await loginWithTOTP(phone, codeStr);
+        const result = await loginWithTOTP(phone, codeStr);
+        // Check if returning user has a name set
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: prof } = await supabase
+            .from("profiles")
+            .select("name")
+            .eq("id", user.id)
+            .single();
+          if (!prof?.name) {
+            setStep("name-setup");
+            return;
+          }
+        }
         toast.success("Welcome back!");
       }
     } catch (err: any) {
