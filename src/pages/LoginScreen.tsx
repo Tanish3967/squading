@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Phone } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import GlowOrb from "@/components/squad/GlowOrb";
 import { checkPhone, registerPhone, verifySetup, loginWithTOTP } from "@/lib/auth-api";
 import { toast } from "sonner";
@@ -83,19 +84,7 @@ export default function LoginScreen() {
     }
   }, [code]);
 
-  // Generate QR code SVG from otpauth URI
-  const qrSvg = `data:image/svg+xml,${encodeURIComponent(`
-<svg xmlns="http://www.w3.org/2000/svg" width="220" height="220" viewBox="0 0 220 220">
-  <rect width="220" height="220" fill="#0a0a0b" rx="16"/>
-  <rect x="10" y="10" width="60" height="60" rx="6" fill="none" stroke="#FF6B00" stroke-width="5"/>
-  <rect x="20" y="20" width="40" height="40" rx="3" fill="#FF6B00"/>
-  <rect x="150" y="10" width="60" height="60" rx="6" fill="none" stroke="#FF6B00" stroke-width="5"/>
-  <rect x="160" y="20" width="40" height="40" rx="3" fill="#FF6B00"/>
-  <rect x="10" y="150" width="60" height="60" rx="6" fill="none" stroke="#FF6B00" stroke-width="5"/>
-  <rect x="20" y="160" width="40" height="40" rx="3" fill="#FF6B00"/>
-  <rect x="96" y="96" width="28" height="28" rx="6" fill="#FF6B00"/>
-  <text x="110" y="115" text-anchor="middle" font-size="16" fill="#000">🎯</text>
-</svg>`)}`;
+  // QR code is rendered inline using QRCodeSVG component
 
   const CodeInput = () => (
     <div className="flex gap-2.5 justify-center">
@@ -191,8 +180,14 @@ export default function LoginScreen() {
           </div>
 
           <div className="flex justify-center">
-            <div className="p-3 bg-card rounded-xl border-2 border-squad-saffron/30 shadow-[0_0_40px_hsl(25_100%_50%/0.1)]">
-              <img src={qrSvg} alt="TOTP QR Code" width={196} height={196} className="rounded-[10px] block" />
+            <div className="p-3 bg-white rounded-xl border-2 border-squad-saffron/30 shadow-[0_0_40px_hsl(25_100%_50%/0.1)]">
+              <QRCodeSVG
+                value={otpauthUri}
+                size={196}
+                level="M"
+                bgColor="#ffffff"
+                fgColor="#000000"
+              />
             </div>
           </div>
 
