@@ -51,13 +51,11 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
     if (ids.length === 0) return;
 
     supabase
-      .from("profiles")
-      .select("id, name")
-      .in("id", ids)
+      .rpc("get_public_profiles", { user_ids: ids })
       .then(({ data }) => {
         if (data) {
           const map: Record<string, { name: string }> = {};
-          data.forEach(p => { map[p.id] = { name: p.name || "Squad Member" }; });
+          (data as { id: string; name: string | null }[]).forEach(p => { map[p.id] = { name: p.name || "Squad Member" }; });
           setProfilesMap(map);
         }
       });

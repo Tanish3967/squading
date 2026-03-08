@@ -35,9 +35,7 @@ export default function ActivityComments({ activityId, currentUserId, currentUse
       // Fetch profile names
       const userIds = [...new Set(data.map(c => c.user_id))];
       const { data: profiles } = await supabase
-        .from("profiles")
-        .select("id, name")
-        .in("id", userIds);
+        .rpc("get_public_profiles", { user_ids: userIds });
 
       const nameMap: Record<string, string> = {};
       profiles?.forEach(p => { nameMap[p.id] = p.name || "Squad Member"; });
