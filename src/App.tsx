@@ -287,6 +287,7 @@ function AppContent() {
           currentUser={currentUser}
           onBack={() => setScreen(activeTab)}
           onUpdateActivity={handleUpdateActivity}
+          onDeleteActivity={handleDeleteActivity}
         />
       );
     }
