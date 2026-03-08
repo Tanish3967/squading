@@ -137,7 +137,7 @@ export default function LoginScreen() {
     codeRefs.current[focusIdx]?.focus();
   };
 
-  const CodeInput = () => (
+  const codeInputJSX = (
     <div className={`flex items-center gap-1.5 justify-center ${shaking ? "animate-shake" : ""}`} onPaste={handlePaste}>
       {code.map((digit, i) => (
         <React.Fragment key={i}>
