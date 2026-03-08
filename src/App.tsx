@@ -292,6 +292,9 @@ function AppContent() {
         />
       );
     }
+    if (activeTab === "activity") {
+      return <ActivityStatsScreen currentUserId={currentUser.id} activities={activities} />;
+    }
     if (activeTab === "notifications") {
       return <NotificationsScreen currentUser={currentUser} activities={activities} onActivityClick={handleActivityClick} />;
     }
