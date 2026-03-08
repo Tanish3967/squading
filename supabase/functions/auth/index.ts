@@ -86,6 +86,16 @@ async function handleCheckPhone(phone: string) {
   });
 }
 
+// ── register (new user) ─────────────────────────────────────
+async function handleRegister(phone: string) {
+  const admin = getAdminClient();
+
+  const { data: existing } = await admin
+    .from("profiles")
+    .select("id")
+    .eq("phone", phone)
+    .maybeSingle();
+
   if (existing) {
     return json({ error: "Phone number already registered" }, 400);
   }
