@@ -81,7 +81,8 @@ export default function CreateActivityScreen({ currentUser, onBack, onCreate }: 
       ...form,
       creatorId: currentUser.id,
       invitees: selectedContacts.map((c) => ({
-        userId: c.id, // We'll map this to the contact's phone-based profile if they register
+        userId: c.id,
+        name: c.name,
         status: "pending" as const,
         paid: false,
         attended: false,

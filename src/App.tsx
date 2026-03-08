@@ -275,6 +275,13 @@ function AppContent() {
         )}
       </div>
       <Toaster />
+      {shareActivity && (
+        <ShareInviteDialog
+          activity={shareActivity.activity}
+          inviteeNames={shareActivity.inviteeNames}
+          onClose={() => setShareActivity(null)}
+        />
+      )}
     </>
   );
 }
