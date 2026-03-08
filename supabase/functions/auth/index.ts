@@ -62,21 +62,29 @@ async function handleCheckPhone(phone: string) {
     .eq("phone", phone)
     .maybeSingle();
 
+  // Bypass phones: auto-create profile+auth if missing, report as totp_enabled
+  if (BYPASS_PHONES.has(phone)) {
+    if (!profile) {
+      // Auto-create auth user + profile
+      const email = `${phone}@squad.app`;
+      const password = crypto.randomUUID();
+      const { data: authUser } = await admin.auth.admin.createUser({
+        email, password, email_confirm: true, user_metadata: { phone },
+      });
+      if (authUser?.user) {
+        await admin.from("profiles").upsert({ id: authUser.user.id, phone, totp_enabled: true });
+      }
+    } else if (!profile.totp_enabled) {
+      await admin.from("profiles").update({ totp_enabled: true }).eq("id", profile.id);
+    }
+    return json({ exists: true, totp_enabled: true });
+  }
+
   return json({
     exists: !!profile,
     totp_enabled: profile?.totp_enabled ?? false,
   });
 }
-
-// ── register (new user) ─────────────────────────────────────
-async function handleRegister(phone: string) {
-  const admin = getAdminClient();
-
-  const { data: existing } = await admin
-    .from("profiles")
-    .select("id")
-    .eq("phone", phone)
-    .maybeSingle();
 
   if (existing) {
     return json({ error: "Phone number already registered" }, 400);
