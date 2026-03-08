@@ -9,6 +9,7 @@ import ActivityEditForm from "@/components/squad/ActivityEditForm";
 import PaymentScreen from "@/components/squad/PaymentScreen";
 import ActivityComments from "@/components/squad/ActivityComments";
 import { supabase } from "@/integrations/supabase/client";
+import { sendPush } from "@/hooks/usePushNotifications";
 
 interface Props {
   activity: Activity;
@@ -339,6 +340,12 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
                             title: "Reminder: You have a pending invite!",
                             body: `${currentUser.name} is waiting for your response to "${activity.title}". Tap to respond.`,
                           });
+                          sendPush(
+                            [invitee.userId],
+                            `🔔 ${currentUser.name} nudged you!`,
+                            `You haven't responded to "${activity.title}" yet.`,
+                            { activityId: activity.id }
+                          );
                           toast.success(`Reminder sent to ${user.name}!`);
                         }}
                         className="px-2.5 py-2 rounded-xl text-[12px] font-medium bg-primary/10 text-primary border border-primary/20 active:scale-95 transition-transform"

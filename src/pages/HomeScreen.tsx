@@ -7,6 +7,7 @@ import ActivityCardSkeleton from "@/components/squad/ActivityCardSkeleton";
 import GlowOrb from "@/components/squad/GlowOrb";
 import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import PullIndicator from "@/components/squad/PullIndicator";
+import PushPrompt from "@/components/squad/PushPrompt";
 
 interface Props {
   currentUser: User;
@@ -268,6 +269,11 @@ export default function HomeScreen({ currentUser, activities, onActivityClick, o
       )}
 
       {/* All activities */}
+      {/* Push notification prompt */}
+      <div className="px-5">
+        <PushPrompt userId={currentUser.id} />
+      </div>
+
       <div className="px-6">
         <div className="flex items-center justify-between mb-3.5">
           <p className="font-display text-sm font-bold tracking-wide uppercase text-muted-foreground">Your Activities</p>

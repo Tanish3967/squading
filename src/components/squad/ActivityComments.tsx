@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import SquadAvatar from "@/components/squad/Avatar";
+import { sendPush } from "@/hooks/usePushNotifications";
 
 interface Comment {
   id: string;
@@ -75,7 +76,35 @@ export default function ActivityComments({ activityId, currentUserId, currentUse
       user_id: currentUserId,
       body: newComment.trim(),
     });
-    if (!error) setNewComment("");
+    if (!error) {
+      // Notify other participants via push
+      const { data: invitees } = await supabase
+        .from("invitees")
+        .select("user_id")
+        .eq("activity_id", activityId);
+      const { data: activity } = await supabase
+        .from("activities")
+        .select("creator_id, title")
+        .eq("id", activityId)
+        .single();
+
+      if (activity) {
+        const otherUserIds = [
+          activity.creator_id,
+          ...(invitees?.map(i => i.user_id) || []),
+        ].filter(id => id !== currentUserId);
+
+        if (otherUserIds.length > 0) {
+          sendPush(
+            otherUserIds,
+            `💬 New message in "${activity.title}"`,
+            `${currentUserName}: ${newComment.trim().slice(0, 80)}`,
+            { activityId }
+          );
+        }
+      }
+      setNewComment("");
+    }
     setSending(false);
   };
 
