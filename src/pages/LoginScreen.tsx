@@ -124,7 +124,7 @@ export default function LoginScreen() {
   };
 
   const CodeInput = () => (
-    <div className="flex items-center gap-1.5 justify-center" onPaste={handlePaste}>
+    <div className={`flex items-center gap-1.5 justify-center ${shaking ? "animate-shake" : ""}`} onPaste={handlePaste}>
       {code.map((digit, i) => (
         <React.Fragment key={i}>
           {i === 3 && <div className="otp-separator" />}
