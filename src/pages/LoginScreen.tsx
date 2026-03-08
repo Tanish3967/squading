@@ -137,7 +137,7 @@ export default function LoginScreen() {
     codeRefs.current[focusIdx]?.focus();
   };
 
-  const CodeInput = () => (
+  const codeInputJSX = (
     <div className={`flex items-center gap-1.5 justify-center ${shaking ? "animate-shake" : ""}`} onPaste={handlePaste}>
       {code.map((digit, i) => (
         <React.Fragment key={i}>
@@ -292,7 +292,7 @@ export default function LoginScreen() {
               Enter the 6-digit code shown for <strong className="text-foreground">Squad</strong> in your authenticator app to confirm setup.
             </p>
           </div>
-          <CodeInput />
+          {codeInputJSX}
           <div className="flex items-center gap-2 p-3 bg-squad-green/5 border border-squad-green/15 rounded-xl">
             <span className="text-base">⏱️</span>
             <p className="text-[13px] text-squad-text2">The code refreshes every 30 seconds. Enter it before it changes.</p>
@@ -356,7 +356,7 @@ export default function LoginScreen() {
             <div className="w-8 h-8 rounded-full border-[3px] border-squad-saffron flex items-center justify-center text-[11px] text-squad-saffron font-bold">30</div>
           </div>
 
-          <CodeInput />
+          {codeInputJSX}
 
           <button onClick={handleVerify} disabled={loading || code.join("").length !== 6} className="flex items-center justify-center gap-2 py-3.5 px-6 rounded-[14px] bg-squad-saffron text-primary-foreground font-medium shadow-saffron active:scale-[0.97] transition-all w-full disabled:opacity-50">
             {loading ? <span className="animate-pulse-soft">Verifying…</span> : "Verify & Enter →"}
