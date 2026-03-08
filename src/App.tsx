@@ -324,6 +324,7 @@ function AppContent() {
         onActivityClick={handleActivityClick}
         onCreateClick={() => { setScreen("create"); setActiveTab("create"); }}
         onRefresh={fetchActivities}
+        loading={loadingActivities}
       />
     );
   };
