@@ -1,73 +1,71 @@
-# Welcome to your Lovable project
+# 🎯 Squad
 
-## Project info
+**Plan together. Show up together. Get your money back when you do.**
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+Squad is a social commitment app that helps friend groups plan activities, put skin in the game with deposits, and reward those who actually show up.
 
-## How can I edit this code?
+## ✨ Features
 
-There are several ways of editing your application.
+- **Phone + TOTP Authentication** — Passwordless login using phone number and authenticator apps (Google Authenticator, Authy, Microsoft Authenticator)
+- **Activity Creation & Management** — Create group activities with date, time, location, category, and deposit amounts
+- **Invite System** — Invite friends via contacts, share links, or QR codes; track RSVPs in real-time
+- **Deposit & Refund Flow** — Participants pay a deposit to commit; attended members get refunds
+- **Attendance Tracking** — Creators mark attendance; the system handles refund eligibility
+- **Push Notifications** — Web Push for activity reminders (1 day + 1 hour before), nudges, new messages, and invite alerts
+- **In-Activity Chat** — Real-time comments/discussion within each activity
+- **Waitlist** — Auto-managed waitlist when activities hit max capacity
+- **PWA Support** — Installable on mobile with offline-ready service worker, home screen icons, and standalone mode
+- **Dark-First Design** — Bold saffron + dark theme with grain texture, glow orbs, and smooth animations
 
-**Use Lovable**
+## 🛠 Tech Stack
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+| Layer | Technology |
+|-------|-----------|
+| Frontend | React 18, TypeScript, Vite |
+| Styling | Tailwind CSS, shadcn/ui, Framer Motion |
+| Backend | Lovable Cloud (Supabase) — Postgres, Edge Functions, Auth, Realtime |
+| Auth | Phone + TOTP (RFC 6238) via otplib |
+| Payments | PhonePe integration (deposit/refund) |
+| Notifications | Web Push API with VAPID keys |
+| PWA | Service Worker, Web App Manifest |
 
-Changes made via Lovable will be committed automatically to this repo.
+## 📁 Project Structure
 
-**Use your preferred IDE**
+```
+src/
+├── components/
+│   ├── squad/          # App-specific components (ActivityCard, BottomNav, Avatar, etc.)
+│   └── ui/             # shadcn/ui primitives
+├── hooks/              # Custom hooks (useAuth, usePushNotifications, usePullToRefresh)
+├── lib/                # Utilities, auth API, mock data
+├── pages/              # Route screens (Home, Login, Profile, ActivityDetail, etc.)
+└── integrations/       # Supabase client & types
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+supabase/
+├── functions/          # Edge functions (auth, push, push-reminders, get-public-activity)
+└── migrations/         # Database schema migrations
+```
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+## 🚀 Getting Started
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
+# Clone the repo
 git clone <YOUR_GIT_URL>
+cd squad
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# Install dependencies
+npm install
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start dev server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## 🌐 Deployment
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+The app is deployed at **[squading.lovable.app](https://squading.lovable.app)**
 
-**Use GitHub Codespaces**
+Built and deployed via [Lovable](https://lovable.dev).
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 📄 License
 
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Private project. All rights reserved.
