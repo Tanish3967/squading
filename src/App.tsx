@@ -82,10 +82,9 @@ function AppContent() {
       if (acts) {
         // Fetch invitees for all activities
         const actIds = acts.map((a) => a.id);
-        const { data: invitees } = await supabase
-          .from("invitees")
-          .select("*")
-          .in("activity_id", actIds.length > 0 ? actIds : ["__none__"]);
+        const { data: invitees } = actIds.length > 0
+          ? await supabase.from("invitees").select("*").in("activity_id", actIds)
+          : { data: [] };
 
         const mapped: AppActivity[] = acts.map((a) => ({
           id: a.id,
