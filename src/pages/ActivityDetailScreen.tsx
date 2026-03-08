@@ -421,6 +421,40 @@ export default function ActivityDetailScreen({ activity, currentUser, onBack, on
             )}
           </div>
         )}
+
+        {/* Waitlist — show when activity is full and user is not already in */}
+        {activity.status === "upcoming" && joinedInvitees.length >= activity.maxPeople && !isCreator && !myInvite && (
+          <div className="p-5 bg-card border border-border rounded-2xl">
+            <p className="text-sm font-bold mb-1">Activity is full 😔</p>
+            <p className="text-[13px] text-muted-foreground mb-3">Join the waitlist — you'll be notified if a spot opens up.</p>
+            <button
+              onClick={async () => {
+                const { error } = await supabase.from("waitlist").insert({
+                  activity_id: activity.id,
+                  user_id: currentUser.id,
+                });
+                if (error) {
+                  if (error.code === "23505") toast("You're already on the waitlist!");
+                  else toast.error(error.message);
+                } else {
+                  toast.success("You've been added to the waitlist!");
+                }
+              }}
+              className="flex items-center justify-center gap-2 py-3 rounded-xl bg-primary text-primary-foreground text-sm font-medium w-full active:scale-[0.97] transition-transform"
+            >
+              <UserPlus size={16} /> Join Waitlist
+            </button>
+          </div>
+        )}
+
+        {/* Activity Chat */}
+        {activity.status !== "cancelled" && (isCreator || myInvite) && (
+          <ActivityComments
+            activityId={activity.id}
+            currentUserId={currentUser.id}
+            currentUserName={currentUser.name}
+          />
+        )}
       </div>
     </div>
   );
