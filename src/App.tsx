@@ -339,7 +339,7 @@ function AppContent() {
       <div className="grain-overlay" />
       <div className="max-w-[430px] mx-auto min-h-screen bg-background relative overflow-hidden">
         {renderScreen()}
-        {screen !== "create" && screen !== "detail" && screen !== "contacts" && (
+        {screen !== "create" && screen !== "detail" && screen !== "contacts" && screen !== "edit-profile" && (
           <BottomNav
             activeTab={activeTab}
             pendingCount={pendingCount}
