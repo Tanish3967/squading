@@ -4,6 +4,7 @@ interface Props {
   deposit: number;
   activityTitle: string;
   processing: boolean;
+  failed?: boolean;
   onPay: () => void;
   onBack: () => void;
 }
