@@ -1,12 +1,13 @@
 import { useState, useEffect, useRef } from "react";
-import { Phone } from "lucide-react";
+import { Phone, User } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import GlowOrb from "@/components/squad/GlowOrb";
 import { checkPhone, registerPhone, resetupTOTP, verifySetup, loginWithTOTP } from "@/lib/auth-api";
+import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export default function LoginScreen() {
-  const [step, setStep] = useState<"phone" | "qr-setup" | "totp-login">("phone");
+  const [step, setStep] = useState<"phone" | "qr-setup" | "totp-login" | "name-setup">("phone");
   const [phone, setPhone] = useState("");
   const [code, setCode] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
@@ -15,6 +16,8 @@ export default function LoginScreen() {
   const [totpSecret, setTotpSecret] = useState("");
   const [otpauthUri, setOtpauthUri] = useState("");
   const [userId, setUserId] = useState("");
+  const [isNewUser, setIsNewUser] = useState(false);
+  const [displayName, setDisplayName] = useState("");
   const codeRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const handlePhoneNext = async () => {
@@ -23,17 +26,17 @@ export default function LoginScreen() {
     try {
       const result = await checkPhone(phone);
       if (result.exists && result.totp_enabled) {
-        // Returning user — go to TOTP login
+        setIsNewUser(false);
         setStep("totp-login");
       } else if (result.exists && !result.totp_enabled) {
-        // User exists but hasn't completed TOTP setup — re-generate secret
+        setIsNewUser(true);
         const regResult = await resetupTOTP(phone);
         setUserId(regResult.user_id);
         setTotpSecret(regResult.totp_secret);
         setOtpauthUri(regResult.otpauth_uri);
         setStep("qr-setup");
       } else {
-        // New user — register
+        setIsNewUser(true);
         const regResult = await registerPhone(phone);
         setUserId(regResult.user_id);
         setTotpSecret(regResult.totp_secret);
@@ -67,15 +70,33 @@ export default function LoginScreen() {
       if (step === "qr-setup" && setupDone) {
         await verifySetup(userId, codeStr);
         toast.success("Account activated!");
+        // New user — go to name setup
+        setStep("name-setup");
       } else {
         await loginWithTOTP(phone, codeStr);
         toast.success("Welcome back!");
       }
-      // Auth state change will handle navigation via AuthProvider
     } catch (err: any) {
       toast.error(err.message || "Invalid code");
       setCode(["", "", "", "", "", ""]);
       codeRefs.current[0]?.focus();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSaveName = async () => {
+    if (!displayName.trim()) return;
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from("profiles").update({ name: displayName.trim() }).eq("id", user.id);
+      }
+      // Trigger a page reload to let AuthProvider pick up the updated profile
+      window.location.reload();
+    } catch (err: any) {
+      toast.error("Failed to save name");
     } finally {
       setLoading(false);
     }
@@ -87,8 +108,6 @@ export default function LoginScreen() {
       handleVerify();
     }
   }, [code]);
-
-  // QR code is rendered inline using QRCodeSVG component
 
   const CodeInput = () => (
     <div className="flex gap-2.5 justify-center">
@@ -250,6 +269,37 @@ export default function LoginScreen() {
           </button>
           <button onClick={() => setSetupDone(false)} className="flex items-center justify-center gap-2 py-3.5 px-6 rounded-[14px] bg-transparent text-foreground border border-foreground/10 font-medium active:bg-squad-bg3 transition-all w-full">
             ← Back to QR code
+          </button>
+        </div>
+      )}
+
+      {/* Name Setup — shown after TOTP verification for new users */}
+      {step === "name-setup" && (
+        <div className="flex flex-col gap-5 relative z-10 animate-fade-up">
+          <div>
+            <p className="font-display text-[22px] font-bold mb-1.5">What should we call you?</p>
+            <p className="text-squad-text2 text-sm leading-relaxed">This is how your squad will see you.</p>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <label className="text-[13px] text-squad-text2 font-medium tracking-wide">Your Name</label>
+            <input
+              className="bg-squad-bg3 border border-border rounded-[14px] px-4 py-3.5 text-foreground text-base outline-none transition-all focus:border-squad-saffron focus:shadow-[0_0_0_3px_hsl(25_100%_50%/0.25)] placeholder:text-squad-text3"
+              type="text"
+              placeholder="e.g. Arjun Sharma"
+              value={displayName}
+              onChange={e => setDisplayName(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && handleSaveName()}
+              autoFocus
+            />
+          </div>
+
+          <button
+            onClick={handleSaveName}
+            disabled={loading || !displayName.trim()}
+            className="flex items-center justify-center gap-2 py-3.5 px-6 rounded-[14px] bg-squad-saffron text-primary-foreground font-medium shadow-saffron active:scale-[0.97] transition-all disabled:opacity-50"
+          >
+            {loading ? <span className="animate-pulse-soft">Saving…</span> : <><User size={18} />Let's go →</>}
           </button>
         </div>
       )}
