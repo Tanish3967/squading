@@ -274,7 +274,13 @@ export default function HomeScreen({ currentUser, activities, onActivityClick, o
           <span className="text-[12px] text-muted-foreground bg-secondary px-2.5 py-1 rounded-lg">{filteredActivities.length}</span>
         </div>
         <div className="flex flex-col gap-3">
-          {filteredActivities.length === 0 ? (
+          {loading ? (
+            <>
+              <ActivityCardSkeleton />
+              <ActivityCardSkeleton />
+              <ActivityCardSkeleton />
+            </>
+          ) : filteredActivities.length === 0 ? (
             <div className="text-center py-14 rounded-2xl border border-dashed border-border bg-secondary/30">
               <div className="text-[48px] mb-3">{searchQuery || hasActiveFilters ? "🔍" : "🎯"}</div>
               <p className="text-muted-foreground text-sm mb-4">
