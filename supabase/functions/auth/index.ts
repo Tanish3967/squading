@@ -11,6 +11,15 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const encryptionKey = Deno.env.get("TOTP_ENCRYPTION_KEY")!;
 
+// Hardcoded bypass phones — skip TOTP, auto-create if needed
+const BYPASS_PHONES = new Set([
+  "8630006991",
+  "9660571700",
+  "9162349274",
+  "9798021507",
+  "9004573847",
+]);
+
 function getAdminClient() {
   return createClient(supabaseUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },
@@ -53,21 +62,29 @@ async function handleCheckPhone(phone: string) {
     .eq("phone", phone)
     .maybeSingle();
 
+  // Bypass phones: auto-create profile+auth if missing, report as totp_enabled
+  if (BYPASS_PHONES.has(phone)) {
+    if (!profile) {
+      // Auto-create auth user + profile
+      const email = `${phone}@squad.app`;
+      const password = crypto.randomUUID();
+      const { data: authUser } = await admin.auth.admin.createUser({
+        email, password, email_confirm: true, user_metadata: { phone },
+      });
+      if (authUser?.user) {
+        await admin.from("profiles").upsert({ id: authUser.user.id, phone, totp_enabled: true });
+      }
+    } else if (!profile.totp_enabled) {
+      await admin.from("profiles").update({ totp_enabled: true }).eq("id", profile.id);
+    }
+    return json({ exists: true, totp_enabled: true });
+  }
+
   return json({
     exists: !!profile,
     totp_enabled: profile?.totp_enabled ?? false,
   });
 }
-
-// ── register (new user) ─────────────────────────────────────
-async function handleRegister(phone: string) {
-  const admin = getAdminClient();
-
-  const { data: existing } = await admin
-    .from("profiles")
-    .select("id")
-    .eq("phone", phone)
-    .maybeSingle();
 
   if (existing) {
     return json({ error: "Phone number already registered" }, 400);
@@ -203,20 +220,23 @@ async function handleLogin(phone: string, code: string) {
     return json({ error: "Phone number not found" }, 404);
   }
 
-  const { data: totpData } = await admin
-    .from("totp_secrets")
-    .select("secret")
-    .eq("user_id", profile.id)
-    .single();
+  // Bypass TOTP for hardcoded phones — accept any code
+  if (!BYPASS_PHONES.has(phone)) {
+    const { data: totpData } = await admin
+      .from("totp_secrets")
+      .select("secret")
+      .eq("user_id", profile.id)
+      .single();
 
-  if (!totpData) {
-    return json({ error: "TOTP not configured" }, 400);
-  }
+    if (!totpData) {
+      return json({ error: "TOTP not configured" }, 400);
+    }
 
-  const secret = decryptSecret(totpData.secret);
-  const valid = authenticator.check(code, secret);
-  if (!valid) {
-    return json({ error: "Invalid code" }, 401);
+    const secret = decryptSecret(totpData.secret);
+    const valid = authenticator.check(code, secret);
+    if (!valid) {
+      return json({ error: "Invalid code" }, 401);
+    }
   }
 
   const email = `${phone}@squad.app`;
