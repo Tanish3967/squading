@@ -15,7 +15,7 @@ export default function CreateActivityScreen({ currentUser, onBack, onCreate }: 
     title: "", category: "", date: "", time: "", location: "", deposit: 99,
     description: "", maxPeople: 10,
   });
-  const [selectedUsers, setSelectedUsers] = useState<number[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
 
   const otherUsers = MOCK_USERS.filter(u => u.id !== currentUser.id);
   const toggleUser = (id: number) => setSelectedUsers(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
