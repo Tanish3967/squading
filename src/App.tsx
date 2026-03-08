@@ -8,6 +8,7 @@ import NotificationsScreen from "./pages/NotificationsScreen";
 import ProfileScreen from "./pages/ProfileScreen";
 import ContactsScreen from "./pages/ContactsScreen";
 import BottomNav from "./components/squad/BottomNav";
+import ShareInviteDialog from "./components/squad/ShareInviteDialog";
 import { AuthProvider, useAuth, Profile } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -63,6 +64,7 @@ function AppContent() {
   const [activities, setActivities] = useState<AppActivity[]>([]);
   const [selectedActivity, setSelectedActivity] = useState<AppActivity | null>(null);
   const [loadingActivities, setLoadingActivities] = useState(true);
+  const [shareActivity, setShareActivity] = useState<{ activity: AppActivity; inviteeNames: string[] } | null>(null);
 
   const currentUser = profile ? profileToAppUser(profile) : null;
 
@@ -204,6 +206,10 @@ function AppContent() {
     setActivities((prev) => [appActivity, ...prev]);
     setScreen("home");
     setActiveTab("home");
+
+    // Show share dialog with invitee names
+    const inviteeNames: string[] = (newActivity.invitees || []).map((inv: any) => inv.name || "Contact");
+    setShareActivity({ activity: appActivity, inviteeNames });
   };
 
   const handleTabChange = (tab: string) => {
@@ -269,6 +275,13 @@ function AppContent() {
         )}
       </div>
       <Toaster />
+      {shareActivity && (
+        <ShareInviteDialog
+          activity={shareActivity.activity}
+          inviteeNames={shareActivity.inviteeNames}
+          onClose={() => setShareActivity(null)}
+        />
+      )}
     </>
   );
 }
