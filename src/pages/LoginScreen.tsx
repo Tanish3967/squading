@@ -180,8 +180,14 @@ export default function LoginScreen() {
           </div>
 
           <div className="flex justify-center">
-            <div className="p-3 bg-card rounded-xl border-2 border-squad-saffron/30 shadow-[0_0_40px_hsl(25_100%_50%/0.1)]">
-              <img src={qrSvg} alt="TOTP QR Code" width={196} height={196} className="rounded-[10px] block" />
+            <div className="p-3 bg-white rounded-xl border-2 border-squad-saffron/30 shadow-[0_0_40px_hsl(25_100%_50%/0.1)]">
+              <QRCodeSVG
+                value={otpauthUri}
+                size={196}
+                level="M"
+                bgColor="#ffffff"
+                fgColor="#000000"
+              />
             </div>
           </div>
 
