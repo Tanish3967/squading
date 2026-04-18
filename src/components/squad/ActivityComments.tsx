@@ -32,7 +32,6 @@ export default function ActivityComments({ activityId, currentUserId, currentUse
       .order("created_at", { ascending: true });
 
     if (data) {
-      // Fetch profile names
       const userIds = [...new Set(data.map(c => c.user_id))];
       const { data: profiles } = await supabase
         .rpc("get_public_profiles", { user_ids: userIds });
@@ -47,19 +46,42 @@ export default function ActivityComments({ activityId, currentUserId, currentUse
     }
   };
 
+  const appendComment = async (row: { id: string; body: string; created_at: string; user_id: string }) => {
+    let userName = "Squad Member";
+    if (row.user_id === currentUserId) {
+      userName = currentUserName;
+    } else {
+      const { data: profiles } = await supabase
+        .rpc("get_public_profiles", { user_ids: [row.user_id] });
+      const p = (profiles as { id: string; name: string | null }[] | null)?.[0];
+      if (p?.name) userName = p.name;
+    }
+    setComments(prev => prev.some(c => c.id === row.id) ? prev : [...prev, { ...row, user_name: userName }]);
+  };
+
   useEffect(() => {
     fetchComments();
 
     const channel = supabase
-      .channel(`comments-${activityId}`)
+      .channel(`comments-${activityId}-${Math.random()}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "comments", filter: `activity_id=eq.${activityId}` },
-        () => fetchComments()
+        { event: "INSERT", schema: "public", table: "comments", filter: `activity_id=eq.${activityId}` },
+        (payload) => {
+          appendComment(payload.new as any);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "comments", filter: `activity_id=eq.${activityId}` },
+        (payload) => {
+          setComments(prev => prev.filter(c => c.id !== (payload.old as any).id));
+        }
       )
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activityId]);
 
   useEffect(() => {
