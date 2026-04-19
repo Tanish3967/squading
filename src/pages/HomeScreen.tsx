@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { prefetchContacts } from "@/lib/contacts-cache";
 import { Bell, Plus, Sparkles, Search, X, ChevronDown } from "lucide-react";
 import { Activity, User, ACTIVITY_CATEGORIES } from "@/lib/mock-data";
 import SquadAvatar from "@/components/squad/Avatar";
