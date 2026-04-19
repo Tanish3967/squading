@@ -3,7 +3,7 @@ import { Phone, User } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import GlowOrb from "@/components/squad/GlowOrb";
 import squadLogo from "@/assets/squad-logo.png";
-import { checkPhone, registerPhone, resetupTOTP, verifySetup, loginWithTOTP } from "@/lib/auth-api";
+import { checkPhone, verifySetup, loginWithTOTP, pingAuth } from "@/lib/auth-api";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -24,30 +24,25 @@ export default function LoginScreen() {
 
   const handlePhoneNext = async () => {
     if (phone.length !== 10) return;
-    setLoading(true);
+    // Defer the spinner by 200ms — avoids flicker on warm/fast responses
+    const spinnerTimer = setTimeout(() => setLoading(true), 200);
     try {
       const result = await checkPhone(phone);
       if (result.exists && result.totp_enabled) {
         setIsNewUser(false);
         setStep("totp-login");
-      } else if (result.exists && !result.totp_enabled) {
-        setIsNewUser(true);
-        const regResult = await resetupTOTP(phone);
-        setUserId(regResult.user_id);
-        setTotpSecret(regResult.totp_secret);
-        setOtpauthUri(regResult.otpauth_uri);
-        setStep("qr-setup");
       } else {
+        // New user OR existing user without TOTP — setup data is included in response
         setIsNewUser(true);
-        const regResult = await registerPhone(phone);
-        setUserId(regResult.user_id);
-        setTotpSecret(regResult.totp_secret);
-        setOtpauthUri(regResult.otpauth_uri);
+        if (result.user_id) setUserId(result.user_id);
+        if (result.totp_secret) setTotpSecret(result.totp_secret);
+        if (result.otpauth_uri) setOtpauthUri(result.otpauth_uri);
         setStep("qr-setup");
       }
     } catch (err: any) {
       toast.error(err.message || "Something went wrong");
     } finally {
+      clearTimeout(spinnerTimer);
       setLoading(false);
     }
   };
@@ -195,7 +190,11 @@ export default function LoginScreen() {
                 maxLength={10}
                 placeholder="98765 43210"
                 value={phone}
-                onChange={e => setPhone(e.target.value.replace(/\D/g, ""))}
+                onFocus={pingAuth}
+                onChange={e => {
+                  pingAuth();
+                  setPhone(e.target.value.replace(/\D/g, ""));
+                }}
                 onKeyDown={e => e.key === "Enter" && handlePhoneNext()}
               />
             </div>
