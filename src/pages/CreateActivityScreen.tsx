@@ -42,6 +42,14 @@ export default function CreateActivityScreen({ currentUser, onBack, onCreate }: 
           setContacts((data as Contact[]) || []);
           setLoadingContacts(false);
         });
+
+      // Warm up the contact-matching RPC so the create-activity submit feels instant.
+      // Empty-array call returns 0 rows immediately but pre-warms the PostgREST
+      // connection + Postgres query plan cache. Fire-and-forget.
+      supabase
+        .rpc("get_profiles_by_phones", { phone_numbers: [] })
+        .then(() => {})
+        .then(undefined, () => {});
     }
   }, [user]);
 
