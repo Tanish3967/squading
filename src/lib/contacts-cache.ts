@@ -31,19 +31,18 @@ export function prefetchContacts(userId: string | undefined): Promise<CachedCont
   if (cached) return Promise.resolve(cached);
   if (inFlight) return inFlight;
 
-  inFlight = supabase
-    .from("contacts")
-    .select("id, name, phone")
-    .order("name")
-    .then(({ data }) => {
+  inFlight = (async () => {
+    try {
+      const { data } = await supabase
+        .from("contacts")
+        .select("id, name, phone")
+        .order("name");
       cached = (data as CachedContact[]) || [];
-      inFlight = null;
       return cached;
-    })
-    .catch((err) => {
+    } finally {
       inFlight = null;
-      throw err;
-    });
+    }
+  })();
 
   return inFlight;
 }
