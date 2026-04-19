@@ -3,6 +3,7 @@ import { ChevronLeft, Check, UserPlus, X } from "lucide-react";
 import { User, ACTIVITY_CATEGORIES, Activity } from "@/lib/mock-data";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { prefetchContacts, updateContactsCache, type CachedContact } from "@/lib/contacts-cache";
 import SquadAvatar from "@/components/squad/Avatar";
 import { toast } from "sonner";
 
