@@ -41,6 +41,16 @@ export default function HomeScreen({ currentUser, activities, onActivityClick, o
   const [selectedDate, setSelectedDate] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
 
+  // Prefetch contacts + warm up the contact-matching RPC so the Create flow
+  // feels instant when the user taps the + button. Fire-and-forget.
+  useEffect(() => {
+    prefetchContacts(currentUser.id).catch(() => {});
+    supabase
+      .rpc("get_profiles_by_phones", { phone_numbers: [] })
+      .then(() => {}, () => {});
+  }, [currentUser.id]);
+
+
   const myInvites = activities.filter(a =>
     a.invitees.some(i => i.userId === currentUser.id && i.status === "pending")
   );
