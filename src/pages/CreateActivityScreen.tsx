@@ -74,6 +74,7 @@ export default function CreateActivityScreen({ currentUser, onBack, onCreate }: 
     } else {
       const contact = data as Contact;
       setContacts((prev) => [...prev, contact].sort((a, b) => a.name.localeCompare(b.name)));
+      updateContactsCache((prev) => [...prev, contact].sort((a, b) => a.name.localeCompare(b.name)));
       setSelectedContacts((prev) => [...prev, contact]);
       setQuickName("");
       setQuickPhone("");
