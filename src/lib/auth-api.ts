@@ -9,10 +9,31 @@ async function callAuth(action: string, body: Record<string, string>) {
   return data;
 }
 
-export async function checkPhone(phone: string) {
+export interface CheckPhoneResult {
+  exists: boolean;
+  totp_enabled: boolean;
+  // Present when user is new or hasn't completed TOTP setup
+  user_id?: string;
+  totp_secret?: string;
+  otpauth_uri?: string;
+  manual_key?: string;
+}
+
+export async function checkPhone(phone: string): Promise<CheckPhoneResult> {
   return callAuth("check-phone", { phone });
 }
 
+// Fire-and-forget warm-up — call on phone-input focus to pay cold-boot cost early
+let pingedThisSession = false;
+export function pingAuth() {
+  if (pingedThisSession) return;
+  pingedThisSession = true;
+  supabase.functions.invoke("auth/ping", { method: "GET" } as any).catch(() => {
+    pingedThisSession = false; // allow retry on next focus
+  });
+}
+
+// Kept for backwards compatibility; check-phone now returns this data inline.
 export async function registerPhone(phone: string) {
   return callAuth("register", { phone });
 }
