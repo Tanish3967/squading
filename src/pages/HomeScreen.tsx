@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { prefetchContacts } from "@/lib/contacts-cache";
 import { Bell, Plus, Sparkles, Search, X, ChevronDown } from "lucide-react";
 import { Activity, User, ACTIVITY_CATEGORIES } from "@/lib/mock-data";
 import SquadAvatar from "@/components/squad/Avatar";
@@ -38,6 +40,16 @@ export default function HomeScreen({ currentUser, activities, onActivityClick, o
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedDate, setSelectedDate] = useState("all");
   const [showFilters, setShowFilters] = useState(false);
+
+  // Prefetch contacts + warm up the contact-matching RPC so the Create flow
+  // feels instant when the user taps the + button. Fire-and-forget.
+  useEffect(() => {
+    prefetchContacts(currentUser.id).catch(() => {});
+    supabase
+      .rpc("get_profiles_by_phones", { phone_numbers: [] })
+      .then(() => {}, () => {});
+  }, [currentUser.id]);
+
 
   const myInvites = activities.filter(a =>
     a.invitees.some(i => i.userId === currentUser.id && i.status === "pending")
