@@ -34,24 +34,22 @@ export default function CreateActivityScreen({ currentUser, onBack, onCreate }: 
   const [quickPhone, setQuickPhone] = useState("");
 
   useEffect(() => {
-    if (user) {
-      supabase
-        .from("contacts")
-        .select("id, name, phone")
-        .order("name")
-        .then(({ data }) => {
-          setContacts((data as Contact[]) || []);
-          setLoadingContacts(false);
-        });
+    if (!user) return;
 
-      // Warm up the contact-matching RPC so the create-activity submit feels instant.
-      // Empty-array call returns 0 rows immediately but pre-warms the PostgREST
-      // connection + Postgres query plan cache. Fire-and-forget.
-      supabase
-        .rpc("get_profiles_by_phones", { phone_numbers: [] })
-        .then(() => {})
-        .then(undefined, () => {});
-    }
+    // Use the shared cache: instant if already prefetched on Home,
+    // otherwise this triggers (or joins) the in-flight request.
+    prefetchContacts(user.id)
+      .then((data) => {
+        setContacts(data);
+        setLoadingContacts(false);
+      })
+      .catch(() => setLoadingContacts(false));
+
+    // Warm the contact-matching RPC for the final submit step (in case Home
+    // didn't get a chance to, e.g. deep-link straight into Create).
+    supabase
+      .rpc("get_profiles_by_phones", { phone_numbers: [] })
+      .then(() => {}, () => {});
   }, [user]);
 
   const toggleContact = (c: Contact) =>
